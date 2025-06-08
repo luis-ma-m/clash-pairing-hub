@@ -165,6 +165,16 @@ npm run preview
 npm run lint
 ```
 
+### Local API Server
+
+Run the mock API with:
+
+```bash
+npm run server
+```
+
+By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
+
 ## 🎯 Success Criteria
 
 The platform aims to enable tournament administrators to:
