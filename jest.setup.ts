@@ -2,14 +2,14 @@ import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';
 import { JSDOM } from 'jsdom';
 
-// Polyfill TextEncoder/TextDecoder if missing (before JSDOM)
-if (typeof globalThis.TextEncoder === 'undefined') {
-  // @ts-ignore
-  globalThis.TextEncoder = TextEncoder;
+// Polyfill TextEncoder/TextDecoder for the test environment
+if (typeof global.TextEncoder === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).TextEncoder = TextEncoder;
 }
-if (typeof globalThis.TextDecoder === 'undefined') {
-  // @ts-ignore
-  globalThis.TextDecoder = TextDecoder;
+if (typeof global.TextDecoder === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).TextDecoder = TextDecoder;
 }
 
 // Basic DOM polyfill for the test runner
@@ -23,7 +23,7 @@ if (typeof document === 'undefined') {
   global.navigator = dom.window.navigator;
 }
 
-// Ensure TextEncoder/TextDecoder exist on global in the JSDOM environment
+// Ensure TextEncoder/TextDecoder exist in the JSDOM environment
 if (typeof globalThis.TextEncoder === 'undefined') {
   // @ts-ignore
   globalThis.TextEncoder = TextEncoder;

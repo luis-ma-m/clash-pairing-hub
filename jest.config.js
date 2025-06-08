@@ -8,7 +8,7 @@ export default {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transform: {
-    '^.+\\.(t|j)sx?$': [
+    '^.+\\.[tj]sx?$': [
       'ts-jest',
       {
         useESM: true,
