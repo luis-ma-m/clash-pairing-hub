@@ -187,6 +187,12 @@ Install dependencies if you haven't already:
 npm install
 ```
 
+Alternatively you can use **Bun**:
+
+```bash
+bun install
+```
+
 Then execute all unit tests:
 
 ```bash
