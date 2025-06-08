@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Shield, Users, Eye } from 'lucide-react';
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  permissions: string[];
+  lastActive: string;
+  status: string;
+};
 
 interface UserRoleManagerProps {
   currentUser: {
@@ -18,45 +29,49 @@ interface UserRoleManagerProps {
 
 const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const mockUsers = [
-    {
-      id: 1,
-      name: 'Dr. Sarah Mitchell',
-      email: 'sarah.mitchell@oxford.ac.uk',
-      role: 'TabDirector',
-      permissions: ['manage_tournament', 'view_all', 'edit_scores'],
-      lastActive: '2 min ago',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Prof. Michael Brown',
-      email: 'michael.brown@cambridge.ac.uk',
-      role: 'Judge',
-      permissions: ['view_assigned', 'enter_scores'],
-      lastActive: '5 min ago',
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Alice Johnson',
-      email: 'alice.johnson@oxford.ac.uk',
-      role: 'TeamCaptain',
-      permissions: ['view_team', 'submit_registration'],
-      lastActive: '1 hour ago',
-      status: 'active'
-    },
-    {
-      id: 4,
-      name: 'System Admin',
-      email: 'admin@debatedesk.com',
-      role: 'SuperAdmin',
-      permissions: ['full_access'],
-      lastActive: '1 day ago',
-      status: 'active'
-    }
-  ];
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('TabDirector');
+
+  const queryClient = useQueryClient();
+
+  const fetchUsers = async () => {
+    const res = await fetch('http://localhost:3001/api/users');
+    if (!res.ok) throw new Error('Failed fetching users');
+    return res.json();
+  };
+
+  const { data: users = [] } = useQuery<User[]>({ queryKey: ['users'], queryFn: fetchUsers });
+
+  const addUser = async () => {
+    const res = await fetch('http://localhost:3001/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, role, lastActive: 'just now', status: 'active', permissions: [] })
+    });
+    if (!res.ok) throw new Error('Failed to add user');
+    return res.json();
+  };
+
+  const updateUser = async (user: User) => {
+    const res = await fetch(`http://localhost:3001/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+    if (!res.ok) throw new Error('Failed to update user');
+    return res.json();
+  };
+
+  const deleteUser = async (id: number) => {
+    const res = await fetch(`http://localhost:3001/api/users/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete user');
+    return res.json();
+  };
+
+  const { mutateAsync: createUser } = useMutation({ mutationFn: addUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
+  const { mutateAsync: editUser } = useMutation({ mutationFn: updateUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
+  const { mutateAsync: removeUser } = useMutation({ mutationFn: deleteUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
 
   const rolePermissions = {
     SuperAdmin: ['Full system access', 'User management', 'Tournament creation', 'Data export'],
@@ -77,7 +92,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
     return <Badge className={colors[role as keyof typeof colors]}>{role}</Badge>;
   };
 
-  const filteredUsers = mockUsers.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -104,9 +119,9 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <Input placeholder="Full Name" />
-              <Input placeholder="Email Address" type="email" />
-              <Select>
+              <Input placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
+              <Input placeholder="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+              <Select value={role} onValueChange={setRole}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
@@ -117,7 +132,9 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
                   <SelectItem value="PublicViewer">Public Viewer</SelectItem>
                 </SelectContent>
               </Select>
-              <Button className="w-full">Create User</Button>
+              <Button className="w-full" onClick={async () => { await createUser(); setName(''); setEmail(''); setRole('TabDirector'); }}>
+                Create User
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -130,7 +147,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUsers.length}</div>
+            <div className="text-2xl font-bold">{users.length}</div>
           </CardContent>
         </Card>
 
@@ -141,7 +158,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockUsers.filter(u => u.status === 'active').length}
+              {users.filter(u => u.status === 'active').length}
             </div>
           </CardContent>
         </Card>
@@ -153,7 +170,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockUsers.filter(u => u.role === 'Judge').length}
+              {users.filter(u => u.role === 'Judge').length}
             </div>
           </CardContent>
         </Card>
@@ -165,7 +182,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockUsers.filter(u => u.role === 'TeamCaptain').length}
+              {users.filter(u => u.role === 'TeamCaptain').length}
             </div>
           </CardContent>
         </Card>
@@ -212,10 +229,10 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={async () => await editUser({ ...user, lastActive: 'just now' })}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={async () => removeUser(user.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

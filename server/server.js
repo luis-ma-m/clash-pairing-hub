@@ -91,14 +91,12 @@ app.post('/api/pairings/generate', async (req, res) => {
   await db.read();
   const { algorithm = 'swiss', round } = req.body;
 
-  // bump or set the round
   if (typeof round === 'number') {
     db.data.currentRound = round;
   } else {
     db.data.currentRound += 1;
   }
 
-  // clone & sort teams
   const teamList = [...db.data.teams];
   const byWinsAndSpeaker = (a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins;
@@ -111,11 +109,9 @@ app.post('/api/pairings/generate', async (req, res) => {
       [teamList[i], teamList[j]] = [teamList[j], teamList[i]];
     }
   } else {
-    // 'swiss' or 'power' (both use same sort for now)
     teamList.sort(byWinsAndSpeaker);
   }
 
-  // pair off
   const newPairings = [];
   for (let i = 0; i < teamList.length; i += 2) {
     const A = teamList[i];
@@ -259,19 +255,7 @@ app.delete('/api/users/:id', async (req, res) => {
   res.json(removed[0]);
 });
 
-// ─── Submit a new score ────────────────────────────────────────────────────
-app.post('/api/scores', async (req, res) => {
-  const score = { id: Date.now(), ...req.body };
-  db.data.scores.push(score);
-  await save();
-  res.status(201).json(score);
-});
-
 // ─── Start Server ──────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
-});
-
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
