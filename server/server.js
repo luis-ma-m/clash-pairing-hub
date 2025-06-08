@@ -259,7 +259,19 @@ app.delete('/api/users/:id', async (req, res) => {
   res.json(removed[0]);
 });
 
+// ─── Submit a new score ────────────────────────────────────────────────────
+app.post('/api/scores', async (req, res) => {
+  const score = { id: Date.now(), ...req.body };
+  db.data.scores.push(score);
+  await save();
+  res.status(201).json(score);
+});
+
 // ─── Start Server ──────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`Server listening on ${PORT}`);
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
