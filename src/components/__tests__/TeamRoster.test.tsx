@@ -25,6 +25,7 @@ const fromMock = jest.fn().mockReturnValue({
 interface SupabaseLike {
   from: typeof fromMock
 }
+
 // Redirect supabase.from to our mock
 ;(supabase as unknown as SupabaseLike).from = fromMock
 
@@ -47,7 +48,7 @@ describe('TeamRoster', () => {
     // Ensure we called supabase.from('teams')
     expect(fromMock).toHaveBeenCalledWith('teams')
 
-    // Wait for mock data to appear in the DOM
+    // Wait for our mock data to appear in the DOM
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument()
       expect(screen.getByText('Org')).toBeInTheDocument()
