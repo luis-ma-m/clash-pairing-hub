@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TeamRoster from "../TeamRoster";
 import { supabase } from "@/lib/supabase";
 
-jest.mock("@/lib/supabase");
+// Avoid importing the real Supabase client which is ESM only. Provide a
+// lightweight mock that exposes a `from` method which tests can configure.
+jest.mock("@/lib/supabase", () => ({
+  supabase: { from: jest.fn() },
+  __esModule: true,
+}));
 
 const mockTeams = [
   { id: 1, name: "Alpha", organization: "Org", speakers: ["A1"], wins: 0, losses: 0, speakerPoints: 0 },
