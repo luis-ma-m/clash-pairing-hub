@@ -73,6 +73,15 @@ app.get('/api/scores/:room', (req, res) => {
   res.json(scores[req.params.room] || []);
 });
 
+app.post('/api/scores', (req, res) => {
+  const { room, scores: roomScores } = req.body;
+  if (!room || !Array.isArray(roomScores)) {
+    return res.status(400).json({ error: 'Invalid score data' });
+  }
+  scores[room] = roomScores;
+  res.status(201).json({ status: 'ok' });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
