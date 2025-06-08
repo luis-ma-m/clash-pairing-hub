@@ -432,6 +432,42 @@ app.post('/api/pairings/swiss', async (req, res) => {
   res.status(201).json(inserted)
 })
 
+// ─── Round Progression ─────────────────────────────────────────────────────
+
+app.post('/api/rounds/progress', async (_req, res) => {
+  const { data: setting, error: sErr } = await supabase
+    .from('settings')
+    .select('currentRound')
+    .single()
+  if (sErr) return res.status(500).json({ error: sErr.message })
+
+  const round = setting?.currentRound ?? 1
+
+  const { data: pairings, error: pErr } = await supabase
+    .from('pairings')
+    .select('*')
+    .eq('round', round)
+  if (pErr) return res.status(500).json({ error: pErr.message })
+
+  if (!pairings?.length) {
+    return res.status(400).json({ error: 'No pairings for current round' })
+  }
+
+  const incomplete = pairings.some(p => p.status !== 'completed')
+  if (incomplete) {
+    return res.status(400).json({ error: 'Round not completed' })
+  }
+
+  const nextRound = round + 1
+  const { error: uErr } = await supabase
+    .from('settings')
+    .update({ currentRound: nextRound })
+    .eq('id', 1)
+  if (uErr) return res.status(500).json({ error: uErr.message })
+
+  res.json({ currentRound: nextRound })
+})
+
 // ─── Rounds CRUD ───────────────────────────────────────────────────────────
 
 app.get('/api/rounds', async (_req, res) => {

@@ -10,6 +10,11 @@ jest.mock('@/lib/supabase', () => ({
   __esModule: true,
 }))
 
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: () => ({ auth: { signInWithPassword: jest.fn(), signUp: jest.fn() } }),
+  __esModule: true,
+}))
+
 import SignIn from '../SignIn'
 import SignUp from '../SignUp'
 

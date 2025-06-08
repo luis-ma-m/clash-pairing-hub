@@ -11,7 +11,7 @@ module.exports = {
   setupFiles: ['<rootDir>/jest.polyfill.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
-  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/src/components/__tests__/'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/src/components/__tests__/', '/src/pages/__tests__/'],
 
   transformIgnorePatterns: [
     '/node_modules/(?!(?:@supabase)/)'
