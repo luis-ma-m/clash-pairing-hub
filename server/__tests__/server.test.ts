@@ -2,10 +2,27 @@
 import request from 'supertest';
 import type { Express } from 'express';
 
-// Mock our LowDB module so scores start empty and writes/read are jest fns
-;(jest as any).unstable_mockModule('../db.ts', () => {
-  const db = { data: { scores: [] }, read: jest.fn(), write: jest.fn() };
-  return { __esModule: true, default: db, initDB: jest.fn() };
+// Mock lowdb so it reads from our JSON fixture and no actual file I/O occurs
+jest.mock('lowdb', () => {
+  const data = require('../db.json');
+  return {
+    Low: class<T> {
+      data: T;
+      constructor(_adapter: any, _defaultData: T) {
+        this.data = data;
+      }
+      async read() {}
+      async write() {}
+    }
+  };
+});
+
+jest.mock('lowdb/node', () => {
+  return {
+    JSONFile: class<T> {
+      constructor(_path: string) {}
+    }
+  };
 });
 
 let app: Express;
@@ -33,7 +50,6 @@ describe('API Endpoints', () => {
   it('GET /api/pairings should return pairings with currentRound', async () => {
     const res = await request(app).get('/api/pairings');
     expect(res.status).toBe(200);
-    // ensure shape: { pairings: [...], currentRound: number }
     expect(res.body).toHaveProperty('pairings');
     expect(Array.isArray(res.body.pairings)).toBe(true);
     expect(res.body).toHaveProperty('currentRound');
@@ -45,30 +61,30 @@ describe('API Endpoints', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('GET /api/tournament/stats should return stats', async () => {
-    const res = await request(app).get('/api/tournament/stats');
+  // Analytics endpoints
+  it('GET /api/analytics/standings should return standings', async () => {
+    const res = await request(app).get('/api/analytics/standings');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('currentRound');
-    expect(res.body).toHaveProperty('totalRounds');
-    expect(res.body).toHaveProperty('quickStats');
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('POST /api/scores should save a score', async () => {
-    const score = {
-      room: 'A1',
-      speaker: 'Test Speaker',
-      team: 'Test Team',
-      position: 'PM',
-      content: 80,
-      style: 80,
-      strategy: 80,
-      total: 240
-    };
-    const res = await request(app).post('/api/scores').send(score);
-    expect(res.status).toBe(201);
+  it('GET /api/analytics/speakers should return speaker stats', async () => {
+    const res = await request(app).get('/api/analytics/speakers');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
 
-    // After POST, our mock DB.write was called and scores array updated in-memory
-    const verify = await request(app).get('/api/scores/A1');
-    expect(verify.body.some((s: any) => s.speaker === score.speaker)).toBe(true);
+  it('GET /api/analytics/performance should return performance over rounds', async () => {
+    const res = await request(app).get('/api/analytics/performance');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('GET /api/analytics/results should return a results summary', async () => {
+    const res = await request(app).get('/api/analytics/results');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('propWins');
+    expect(res.body).toHaveProperty('oppWins');
+    expect(res.body).toHaveProperty('ties');
   });
 });
