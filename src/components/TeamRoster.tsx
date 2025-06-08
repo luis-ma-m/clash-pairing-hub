@@ -24,9 +24,22 @@ const TeamRoster = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [teamName, setTeamName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [speaker1, setSpeaker1] = useState('');
-  const [speaker2, setSpeaker2] = useState('');
-  const [speaker3, setSpeaker3] = useState('');
+  const [speakers, setSpeakers] = useState<string[]>(['', '']);
+
+  const addSpeakerField = () => {
+    if (speakers.length >= 5) return;
+    setSpeakers([...speakers, '']);
+  };
+
+  const removeSpeakerField = (index: number) => {
+    setSpeakers(speakers.filter((_, i) => i !== index));
+  };
+
+  const updateSpeaker = (index: number, value: string) => {
+    const updated = [...speakers];
+    updated[index] = value;
+    setSpeakers(updated);
+  };
 
   const queryClient = useQueryClient();
 
@@ -39,13 +52,17 @@ const TeamRoster = () => {
   const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
 
   const addTeam = async () => {
+    const validSpeakers = speakers.filter(Boolean);
+    if (validSpeakers.length > 5) {
+      throw new Error('Cannot add more than 5 speakers');
+    }
     const res = await apiFetch('/api/teams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: teamName,
         organization,
-        speakers: [speaker1, speaker2, speaker3].filter(Boolean)
+        speakers: validSpeakers
       })
     });
     if (!res.ok) throw new Error('Failed to add team');
@@ -60,7 +77,7 @@ const TeamRoster = () => {
   });
 
   const updateTeam = async (payload: { id: number; updates: Partial<Team> }) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${payload.id}`, {
+    const res = await apiFetch(`/api/teams/${payload.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload.updates)
@@ -70,7 +87,7 @@ const TeamRoster = () => {
   };
 
   const deleteTeam = async (id: number) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${id}`, {
+    const res = await apiFetch(`/api/teams/${id}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Failed to delete team');
@@ -143,18 +160,41 @@ const TeamRoster = () => {
               <div className="space-y-4">
                 <Input placeholder="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
                 <Input placeholder="Organization" value={organization} onChange={(e) => setOrganization(e.target.value)} />
-                <Input placeholder="Speaker 1 Name" value={speaker1} onChange={(e) => setSpeaker1(e.target.value)} />
-                <Input placeholder="Speaker 2 Name" value={speaker2} onChange={(e) => setSpeaker2(e.target.value)} />
-                <Input placeholder="Speaker 3 Name (optional)" value={speaker3} onChange={(e) => setSpeaker3(e.target.value)} />
+                {speakers.map((spk, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder={`Speaker ${index + 1} Name${index < 2 ? '' : ' (optional)'}`}
+                      value={spk}
+                      onChange={(e) => updateSpeaker(index, e.target.value)}
+                    />
+                    {speakers.length > 2 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => removeSpeakerField(index)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {speakers.length < 5 && (
+                  <Button type="button" variant="outline" onClick={addSpeakerField}>
+                    Add Speaker
+                  </Button>
+                )}
                 <Button
                   className="w-full"
                   onClick={async () => {
+                    if (speakers.filter(Boolean).length > 5) {
+                      alert('Cannot add more than 5 speakers');
+                      return;
+                    }
                     await createTeam();
                     setTeamName('');
                     setOrganization('');
-                    setSpeaker1('');
-                    setSpeaker2('');
-                    setSpeaker3('');
+                    setSpeakers(['', '']);
                   }}
                 >
                   Create Team

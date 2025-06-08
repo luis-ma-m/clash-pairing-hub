@@ -3,10 +3,10 @@ import { TextEncoder, TextDecoder } from 'util';
 
 // Polyfill TextEncoder/TextDecoder for testing environment
 if (!global.TextEncoder) {
-  // @ts-ignore
-  global.TextEncoder = TextEncoder;
+  (global as unknown as { TextEncoder: typeof TextEncoder }).TextEncoder =
+    TextEncoder;
 }
 if (!global.TextDecoder) {
-  // @ts-ignore
-  global.TextDecoder = TextDecoder;
+  (global as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder =
+    TextDecoder;
 }

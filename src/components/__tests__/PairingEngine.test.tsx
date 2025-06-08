@@ -10,9 +10,14 @@ const mockPairings = {
   currentRound: 1
 };
 
+const mockResponse = {
+  pairings: mockPairings,
+  currentRound: 1
+};
+
 global.fetch = jest.fn(() => Promise.resolve({
   ok: true,
-  json: () => Promise.resolve(mockPairings)
+  json: () => Promise.resolve(mockResponse)
 })) as jest.Mock;
 
 const renderComponent = () => {
