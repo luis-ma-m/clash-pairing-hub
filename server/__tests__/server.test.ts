@@ -1,6 +1,11 @@
 /** @jest-environment node */
 import request from 'supertest';
 
+(jest as any).unstable_mockModule('../db.ts', () => {
+  const db = { data: { scores: [] }, read: jest.fn(), write: jest.fn() };
+  return { __esModule: true, default: db, initDB: jest.fn() };
+});
+
 let app: any;
 
 beforeAll(async () => {
@@ -33,5 +38,22 @@ describe('API Endpoints', () => {
     const res = await request(app).get('/api/scores/A1');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('POST /api/scores should save a score', async () => {
+    const score = {
+      room: 'A1',
+      speaker: 'Test Speaker',
+      team: 'Test Team',
+      position: 'PM',
+      content: 80,
+      style: 80,
+      strategy: 80,
+      total: 240
+    };
+    const res = await request(app).post('/api/scores').send(score);
+    expect(res.status).toBe(201);
+    const verify = await request(app).get('/api/scores/A1');
+    expect(verify.body.some((s: any) => s.speaker === score.speaker)).toBe(true);
   });
 });
