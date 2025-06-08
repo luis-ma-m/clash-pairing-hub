@@ -161,6 +161,40 @@ app.post('/api/scores', async (req, res) => {
   res.status(201).json(entry);
 });
 
+// ─── Users CRUD ────────────────────────────────────────────────────────────
+app.get('/api/users', async (_req, res) => {
+  await db.read();
+  res.json(db.data.users);
+});
+
+app.post('/api/users', async (req, res) => {
+  await db.read();
+  const user = { id: Date.now(), ...req.body };
+  db.data.users.push(user);
+  await save();
+  res.status(201).json(user);
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  await db.read();
+  const id = Number(req.params.id);
+  const idx = db.data.users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  db.data.users[idx] = { ...db.data.users[idx], ...req.body };
+  await save();
+  res.json(db.data.users[idx]);
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  await db.read();
+  const id = Number(req.params.id);
+  const idx = db.data.users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const [removed] = db.data.users.splice(idx, 1);
+  await save();
+  res.json(removed);
+});
+
 // ─── Analytics Endpoints ───────────────────────────────────────────────────
 
 // Standings
