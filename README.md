@@ -197,7 +197,7 @@ npm run server
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
 
-When `SUPABASE_URL` and `SUPABASE_ANON_KEY` are provided the server connects to your Supabase project. If those variables are missing it falls back to the local JSON file located at `server/db.json`.
+When `SUPABASE_URL` and `SUPABASE_ANON_KEY` are provided the server connects to your Supabase project.
 
 ### Running Tests
 
