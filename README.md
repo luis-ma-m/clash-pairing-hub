@@ -1,5 +1,5 @@
 
-# DebateDesk
+# DebateMinistrator
 
 **A comprehensive tournament management system for academic debate competitions**
 
@@ -9,7 +9,7 @@ Created by **Luis Martín Maíllo**
 
 ## 🎯 Project Overview
 
-DebateDesk is a modern, web-based platform designed to streamline the end-to-end management of academic debate tournaments. Built with tournament administrators, adjudicators, and team captains in mind, it combines intuitive design with powerful features to handle everything from team registration to live scoring and real-time analytics.
+DebateMinistrator is a modern, web-based platform designed to streamline the end-to-end management of academic debate tournaments. Built with tournament administrators, adjudicators, and team captains in mind, it combines intuitive design with powerful features to handle everything from team registration to live scoring and real-time analytics.
 
 ## ✨ Current Features
 
@@ -133,7 +133,7 @@ DebateDesk is a modern, web-based platform designed to streamline the end-to-end
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd debatedesk
+   cd debateministrator
    ```
 
 2. **Install dependencies:**
@@ -221,4 +221,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-*DebateDesk - Streamlining academic debate tournaments with modern technology*
+*DebateMinistrator - Streamlining academic debate tournaments with modern technology*
