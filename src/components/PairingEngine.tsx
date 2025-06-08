@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, expectJson } from '@/lib/api';
 
 type Pairing = {
   id: number;
@@ -28,7 +28,7 @@ const PairingEngine: React.FC = () => {
     if (!res.ok) {
       throw new Error('Failed fetching pairings');
     }
-    return res.json();
+    return expectJson(res);
   };
 
   const { data } = useQuery<PairingsResponse>({

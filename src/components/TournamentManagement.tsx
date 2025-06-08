@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Users, Trophy, Play, Pause, TrendingUp, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, expectJson } from '@/lib/api';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -21,7 +21,7 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
   const fetchStats = async () => {
     const res = await apiFetch('/api/tournament/stats');
     if (!res.ok) throw new Error('Failed fetching stats');
-    return res.json();
+    return expectJson(res);
   };
 
   const { data: stats } = useQuery({

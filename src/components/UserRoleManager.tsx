@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Shield, Users, Eye } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, expectJson } from '@/lib/api';
 
 type User = {
   id: number;
@@ -41,7 +41,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const fetchUsers = async () => {
     const res = await apiFetch('/api/users');
     if (!res.ok) throw new Error('Failed fetching users');
-    return res.json();
+    return expectJson(res);
   };
 
   const { data: users = [] } = useQuery<User[]>({
@@ -57,7 +57,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
       body: JSON.stringify({ name, email, role, lastActive: 'just now', status: 'active', permissions: [] })
     });
     if (!res.ok) throw new Error('Failed to add user');
-    return res.json();
+    return expectJson(res);
   };
 
   const updateUser = async (user: User) => {
@@ -67,13 +67,13 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
       body: JSON.stringify(user)
     });
     if (!res.ok) throw new Error('Failed to update user');
-    return res.json();
+    return expectJson(res);
   };
 
   const deleteUser = async (id: number) => {
     const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete user');
-    return res.json();
+    return expectJson(res);
   };
 
   const { mutateAsync: createUser } = useMutation({
