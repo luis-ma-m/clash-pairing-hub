@@ -2,6 +2,7 @@
 import request from 'supertest';
 import type { Express } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { jest } from '@jest/globals';
 
 // Inline seed data used by the mocked Supabase client
 const seed = {
