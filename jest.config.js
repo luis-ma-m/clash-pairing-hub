@@ -8,7 +8,7 @@ export default {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.app.json',
+      tsconfig: 'tsconfig.jest.json',
       useESM: true
     }
   }
