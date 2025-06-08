@@ -11,6 +11,18 @@
       "wins": 0,
       "losses": 0,
       "speakerPoints": 0
+    },
+    {
+      "id": 2,
+      "name": "Cambridge B",
+      "organization": "Cambridge University",
+      "speakers": [
+        "Carol Jones",
+        "David Lee"
+      ],
+      "wins": 0,
+      "losses": 0,
+      "speakerPoints": 0
     }
   ],
   "pairings": [
@@ -26,7 +38,28 @@
     }
   ],
   "debates": [],
-  "scores": [],
+  "scores": [
+    {
+      "room": "A1",
+      "speaker": "Alice Johnson",
+      "team": "Oxford A",
+      "position": "PM",
+      "content": 78,
+      "style": 82,
+      "strategy": 80,
+      "total": 240
+    },
+    {
+      "room": "A1",
+      "speaker": "Bob Smith",
+      "team": "Oxford A",
+      "position": "DPM",
+      "content": 75,
+      "style": 79,
+      "strategy": 77,
+      "total": 231
+    }
+  ],
   "users": [],
   "currentRound": 2
 }
