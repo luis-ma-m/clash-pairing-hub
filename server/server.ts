@@ -13,13 +13,17 @@ app.use(express.json());
 
 let SUPABASE_URL = process.env.SUPABASE_URL as string | undefined;
 let SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string | undefined;
+let isSupabaseConfigured = true;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('placeholder') || SUPABASE_ANON_KEY.includes('placeholder')) {
   if (process.env.NODE_ENV === 'test') {
     SUPABASE_URL = 'http://localhost';
     SUPABASE_ANON_KEY = 'anon';
   } else {
-    throw new Error('Missing Supabase environment variables');
+    console.warn('⚠️  Supabase not configured - API will return mock data');
+    isSupabaseConfigured = false;
+    SUPABASE_URL = 'https://placeholder.supabase.co';
+    SUPABASE_ANON_KEY = 'placeholder-key';
   }
 }
 
@@ -70,9 +74,20 @@ const userSchema = z.object({
   role: z.string(),
 });
 
+// Middleware to check Supabase configuration
+const checkSupabaseConfig = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!isSupabaseConfigured) {
+    return res.status(503).json({ 
+      error: 'Supabase not configured',
+      message: 'Please connect your Supabase project to enable database functionality'
+    });
+  }
+  next();
+};
+
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
-app.get('/api/teams', async (_req, res) => {
+app.get('/api/teams', checkSupabaseConfig, async (_req, res) => {
   const { data, error } = await supabase.from('teams').select('*');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
@@ -344,14 +359,30 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 // Register analytics routes after CRUD endpoints
-registerAnalyticsRoutes(app, supabase);
+if (isSupabaseConfigured) {
+  registerAnalyticsRoutes(app, supabase);
+}
 
+// ─── Health Check ──────────────────────────────────────────────────────────
+
+app.get('/api/health', (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    supabaseConfigured: isSupabaseConfigured,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ─── Start server ─────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3001;
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`🚀 Server listening on ${PORT}`);
+    if (!isSupabaseConfigured) {
+      console.log('⚠️  Running in demo mode - connect Supabase for full functionality');
+    }
+  });
 }
 
 export { app, supabase };
