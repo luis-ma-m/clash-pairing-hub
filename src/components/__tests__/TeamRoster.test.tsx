@@ -1,5 +1,6 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TeamRoster from '../TeamRoster';
 
@@ -25,7 +26,9 @@ const renderComponent = () => {
 
 describe('TeamRoster', () => {
   it('displays teams from API', async () => {
-    renderComponent();
+    await act(async () => {
+      renderComponent();
+    });
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument();
     });
