@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,8 @@ type SpeakerScore = {
 
 const ScoringInterface = () => {
   const [selectedDebate, setSelectedDebate] = useState('');
+  const [scoresData, setScoresData] = useState<SpeakerScore[]>([]);
+  const queryClient = useQueryClient();
 
   const fetchDebates = async () => {
     const res = await apiFetch('/api/debates');
@@ -52,6 +54,37 @@ const ScoringInterface = () => {
     queryFn: fetchSpeakerScores,
     enabled: !!selectedDebate
   });
+
+  useEffect(() => {
+    setScoresData(speakerScores);
+  }, [speakerScores]);
+
+  const { mutate: submitScores } = useMutation({
+    mutationFn: async (scores: SpeakerScore[]) => {
+      const res = await fetch('http://localhost:3001/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: selectedDebate, scores })
+      });
+      if (!res.ok) throw new Error('Failed submitting scores');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scores', selectedDebate] });
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    }
+  });
+
+  const handleSubmit = () => {
+    const valid = scoresData.every(
+      (s) => s.content >= 0 && s.content <= 100 && s.style >= 0 && s.style <= 100 && s.strategy >= 0 && s.strategy <= 100
+    );
+    if (!valid) {
+      alert('Scores must be between 0 and 100');
+      return;
+    }
+    submitScores(scoresData);
+  };
 
   useEffect(() => {
     if (!selectedDebate && debates.length > 0) {
@@ -196,14 +229,14 @@ const ScoringInterface = () => {
                     <TableHead>Speaker</TableHead>
                     <TableHead>Team</TableHead>
                     <TableHead>Position</TableHead>
-                    <TableHead>Content (50-100)</TableHead>
-                    <TableHead>Style (50-100)</TableHead>
-                    <TableHead>Strategy (50-100)</TableHead>
+                    <TableHead>Content (0-100)</TableHead>
+                    <TableHead>Style (0-100)</TableHead>
+                    <TableHead>Strategy (0-100)</TableHead>
                     <TableHead>Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {speakerScores.map((speaker, index) => (
+                  {scoresData.map((speaker, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{speaker.speaker}</TableCell>
                       <TableCell>{speaker.team}</TableCell>
@@ -211,13 +244,61 @@ const ScoringInterface = () => {
                         <Badge variant="outline">{speaker.position}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Input type="number" min="50" max="100" defaultValue={speaker.content} className="w-20" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={speaker.content}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(100, Number(e.target.value)));
+                            const newScores = [...scoresData];
+                            newScores[index] = {
+                              ...speaker,
+                              content: val,
+                              total: val + newScores[index].style + newScores[index].strategy,
+                            };
+                            setScoresData(newScores);
+                          }}
+                          className="w-20"
+                        />
                       </TableCell>
                       <TableCell>
-                        <Input type="number" min="50" max="100" defaultValue={speaker.style} className="w-20" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={speaker.style}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(100, Number(e.target.value)));
+                            const newScores = [...scoresData];
+                            newScores[index] = {
+                              ...speaker,
+                              style: val,
+                              total: val + newScores[index].content + newScores[index].strategy,
+                            };
+                            setScoresData(newScores);
+                          }}
+                          className="w-20"
+                        />
                       </TableCell>
                       <TableCell>
-                        <Input type="number" min="50" max="100" defaultValue={speaker.strategy} className="w-20" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={speaker.strategy}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(100, Number(e.target.value)));
+                            const newScores = [...scoresData];
+                            newScores[index] = {
+                              ...speaker,
+                              strategy: val,
+                              total: val + newScores[index].content + newScores[index].style,
+                            };
+                            setScoresData(newScores);
+                          }}
+                          className="w-20"
+                        />
                       </TableCell>
                       <TableCell className="font-mono font-bold">{speaker.total}</TableCell>
                     </TableRow>
@@ -226,7 +307,7 @@ const ScoringInterface = () => {
               </Table>
               
               <div className="mt-6 flex justify-end">
-                <Button>Submit Speaker Scores</Button>
+                <Button onClick={handleSubmit}>Submit Speaker Scores</Button>
               </div>
             </TabsContent>
           </Tabs>
