@@ -47,6 +47,18 @@ const teamSchema = z.object({
   speakerPoints: z.number().optional(),
 })
 
+const speakerSchema = z.object({
+  team_id: z.string(),
+  name: z.string(),
+  position: z.number().optional(),
+})
+
+const roundSchema = z.object({
+  tournament_id: z.string(),
+  round_number: z.number(),
+  status: z.string().optional(),
+})
+
 const pairingSchema = z.object({
   round: z.number(),
   room: z.string(),
@@ -234,6 +246,67 @@ app.delete('/api/teams/:id', async (req, res) => {
   res.json(data)
 })
 
+// ─── Speakers CRUD ─────────────────────────────────────────────────────────
+
+app.get('/api/speakers', async (_req, res) => {
+  const { data, error } = await supabase.from('speakers').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('speakers')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/speakers', async (req, res) => {
+  const parsed = speakerSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('speakers')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const parsed = speakerSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('speakers')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('speakers')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
 
 app.get('/api/pairings', async (_req, res) => {
@@ -352,6 +425,67 @@ app.post('/api/pairings/swiss', async (req, res) => {
   await supabase.from('settings').update({ currentRound: round }).eq('id', 1)
 
   res.status(201).json(inserted)
+})
+
+// ─── Rounds CRUD ───────────────────────────────────────────────────────────
+
+app.get('/api/rounds', async (_req, res) => {
+  const { data, error } = await supabase.from('rounds').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('rounds')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/rounds', async (req, res) => {
+  const parsed = roundSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('rounds')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const parsed = roundSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('rounds')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('rounds')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
 })
 
 // ─── Debates CRUD ──────────────────────────────────────────────────────────
