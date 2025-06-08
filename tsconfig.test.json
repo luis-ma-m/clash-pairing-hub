@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "NodeNext",
     "target": "ES2022",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
