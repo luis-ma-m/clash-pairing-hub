@@ -16,6 +16,7 @@ interface TournamentManagementProps {
     rounds: number;
     teams: number;
     status: string;
+    settings?: Record<string, unknown>;
   };
 }
 
@@ -96,6 +97,21 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Status &amp; Settings</CardTitle>
+            <CardDescription>Current tournament configuration</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Badge variant="secondary">{activeTournament.status}</Badge>
+            {activeTournament.settings && (
+              <pre className="bg-slate-100 p-2 rounded text-xs overflow-x-auto">
+                {JSON.stringify(activeTournament.settings, null, 2)}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recent activity and config cards omitted for brevity */}
       </div>
 
@@ -107,16 +123,21 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {tournaments.map((t) => (
-              <div key={t.id} className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span>{t.name}</span>
-                  {t.status && <Badge variant="secondary">{t.status}</Badge>}
+              {tournaments.map((t) => (
+                <div key={t.id} className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span>{t.name}</span>
+                    {t.status && <Badge variant="secondary">{t.status}</Badge>}
+                    {t.settings && (
+                      <code className="text-xs text-muted-foreground ml-2">
+                        {JSON.stringify(t.settings)}
+                      </code>
+                    )}
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => deleteTournament(t.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => deleteTournament(t.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
             ))}
             {tournaments.length === 0 && <p className="text-sm text-muted-foreground">No tournaments</p>}
           </div>

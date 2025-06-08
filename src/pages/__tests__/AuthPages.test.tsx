@@ -11,7 +11,19 @@ jest.mock('@/lib/supabase', () => ({
 }))
 
 jest.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({ auth: { signInWithPassword: jest.fn(), signUp: jest.fn() } }),
+  createClient: () => ({
+    auth: {
+      signInWithPassword: jest.fn(),
+      signUp: jest.fn(),
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+      getSession: jest.fn(() => Promise.resolve({ data: { session: null } })),
+    },
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+  }),
   __esModule: true,
 }))
 

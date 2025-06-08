@@ -20,7 +20,11 @@ const Index = () => {
     format: 'Swiss + Elimination',
     rounds: 4,
     teams: 24,
-    status: 'In Progress'
+    status: 'In Progress',
+    settings: {
+      elimination: 'single',
+      preliminaryRounds: 4
+    }
   });
 
   return (

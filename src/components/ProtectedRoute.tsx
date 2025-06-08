@@ -2,7 +2,7 @@
 import { Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import AuthFallback from './AuthFallback'
+import DemoMode from './DemoMode'
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
   const [loading, setLoading] = useState(true)
@@ -37,7 +37,7 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   }, [])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!hasSupabaseConfig) return <AuthFallback />
+  if (!hasSupabaseConfig) return <DemoMode />
   if (!session) return <Navigate to="/signin" replace />
   return children
 }
