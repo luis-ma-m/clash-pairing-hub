@@ -22,7 +22,7 @@ export async function loadConstraintSettings(): Promise<ConstraintSettings> {
   try {
     // Fetch typed rows from the database
     const { data, error } = await supabase
-      .from<ConstraintRow>('constraint_settings')
+      .from('constraint_settings')
       .select('name, enabled')
 
     if (error) {

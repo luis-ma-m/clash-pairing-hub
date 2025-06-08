@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
+import AuthFallback from '@/components/AuthFallback'
 
 export default function SignIn() {
   const navigate = useNavigate()
@@ -8,12 +9,22 @@ export default function SignIn() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+  const hasSupabaseConfig =
+    !!supabaseUrl &&
+    !!supabaseKey &&
+    !supabaseUrl.includes('your-project') &&
+    !supabaseKey.includes('your-anon-key')
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) setError(error.message)
     else navigate('/')
   }
+
+  if (!hasSupabaseConfig) return <AuthFallback />
 
   return (
     <div className="container mx-auto py-10">
