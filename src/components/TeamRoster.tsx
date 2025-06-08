@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
 import { apiFetch } from "@/lib/api";
+import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv";
 
 type Team = {
   id: number;
@@ -27,6 +28,7 @@ const TeamRoster = () => {
   const [speaker1, setSpeaker1] = useState('');
   const [speaker2, setSpeaker2] = useState('');
   const [speaker3, setSpeaker3] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
 
@@ -87,6 +89,38 @@ const TeamRoster = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] })
   });
 
+  const handleExport = () => {
+    const data: TeamCsv[] = teams.map(t => ({
+      name: t.name,
+      organization: t.organization,
+      speakers: t.speakers,
+    }));
+    const csv = teamsToCsv(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'teams.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseTeamsCsv(text);
+    for (const team of parsed) {
+      await apiFetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(team),
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     team.organization.toLowerCase().includes(searchTerm.toLowerCase())
@@ -118,11 +152,26 @@ const TeamRoster = () => {
           <p className="text-slate-600">Manage teams, speakers, and registrations</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
             <Upload className="h-4 w-4" />
             Import CSV
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>
