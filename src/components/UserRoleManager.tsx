@@ -23,10 +23,10 @@ type User = {
 };
 
 interface UserRoleManagerProps {
-  currentUser: {
+  currentUser?: {
     name: string;
     role: string;
-  };
+  } | null;
 }
 
 const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {

@@ -2,14 +2,19 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Bell, LogOut, Settings, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface DashboardNavProps {
-  currentUser: {
-    name: string;
-    role: string;
-  };
   activeTournament: {
     name: string;
     format: string;
@@ -17,7 +22,11 @@ interface DashboardNavProps {
   };
 }
 
-const DashboardNav = ({ currentUser, activeTournament }: DashboardNavProps) => {
+const DashboardNav = ({ activeTournament }: DashboardNavProps) => {
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null))
+  }, [])
   return (
     <nav className="bg-white border-b border-slate-200 px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
@@ -48,11 +57,10 @@ const DashboardNav = ({ currentUser, activeTournament }: DashboardNavProps) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-3 px-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarFallback>{userEmail?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="text-left">
-                  <div className="font-medium text-sm">{currentUser.name}</div>
-                  <div className="text-xs text-slate-600">{currentUser.role}</div>
+                  <div className="font-medium text-sm">{userEmail}</div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -68,7 +76,7 @@ const DashboardNav = ({ currentUser, activeTournament }: DashboardNavProps) => {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => supabase.auth.signOut()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>
