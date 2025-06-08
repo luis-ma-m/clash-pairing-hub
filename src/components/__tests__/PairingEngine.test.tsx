@@ -5,7 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PairingEngine from '../PairingEngine';
 import { supabase } from '@/lib/supabase';
 
-jest.mock('@/lib/supabase');
+// Provide a custom factory so Jest doesn't try to load the real module, which
+// depends on ESM-only packages. The mocked object exposes a `from` method that
+// tests can override.
+jest.mock('@/lib/supabase', () => ({
+  supabase: { from: jest.fn() },
+  __esModule: true,
+}));
 
 const mockPairings = [
   {
