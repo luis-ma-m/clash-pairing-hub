@@ -22,34 +22,63 @@ const seed = {
 };
 let data: any = JSON.parse(JSON.stringify(seed));
 
-// Mock Supabase client methods to operate on the in-memory data
+// Mock Supabase client with a minimal query builder supporting the chained calls
+// used throughout the API routes. Each method returns a Promise-like object so
+// that `await` works as expected while also exposing `eq`, `single` and `select`
+// where needed.
 jest.mock('@supabase/supabase-js', () => {
+  const makeThenable = (result: any) => ({
+    then: (res: any, rej: any) => Promise.resolve(result).then(res, rej),
+  });
+
   return {
     createClient: () => ({
       from: (table: string) => ({
-        select: async () => ({ data: data[table], error: null }),
-        insert: async (values: any) => {
+        select: () => {
+          const promise: any = makeThenable({ data: data[table], error: null });
+          promise.eq = (field: string, value: any) => {
+            const records = data[table].filter((r: any) => r[field] === value);
+            const eqPromise: any = makeThenable({ data: records, error: null });
+            eqPromise.single = () =>
+              Promise.resolve({ data: records[0] || null, error: null });
+            return eqPromise;
+          };
+          promise.single = () =>
+            Promise.resolve({ data: data[table][0] || null, error: null });
+          return promise;
+        },
+        insert: (values: any) => {
           const arr = Array.isArray(values) ? values : [values];
           const inserted = arr.map(v => ({ id: Date.now(), ...v }));
           data[table].push(...inserted);
-          return { data: inserted, error: null };
+          return {
+            select: () => ({
+              single: () =>
+                Promise.resolve({ data: inserted[0], error: null }),
+            }),
+          };
         },
         update: (values: any) => ({
-          eq: (field: string, id: any) => ({
-            select: async () => {
-              const idx = data[table].findIndex((r: any) => r[field] === id);
-              if (idx !== -1) data[table][idx] = { ...data[table][idx], ...values };
-              return { data: idx !== -1 ? [data[table][idx]] : [], error: null };
-            },
+          eq: (field: string, value: any) => ({
+            select: () => ({
+              single: () => {
+                const idx = data[table].findIndex((r: any) => r[field] === value);
+                if (idx !== -1)
+                  data[table][idx] = { ...data[table][idx], ...values };
+                return Promise.resolve({ data: data[table][idx] || null, error: null });
+              },
+            }),
           }),
         }),
         delete: () => ({
-          eq: (field: string, id: any) => ({
-            select: async () => {
-              const idx = data[table].findIndex((r: any) => r[field] === id);
-              const removed = idx !== -1 ? data[table].splice(idx, 1) : [];
-              return { data: removed, error: null };
-            },
+          eq: (field: string, value: any) => ({
+            select: () => ({
+              single: () => {
+                const idx = data[table].findIndex((r: any) => r[field] === value);
+                const removed = idx !== -1 ? data[table].splice(idx, 1)[0] : null;
+                return Promise.resolve({ data: removed, error: null });
+              },
+            }),
           }),
         }),
       }),

@@ -15,7 +15,7 @@ export function apiFetch(input: string, init?: RequestInit) {
 }
 
 // Helper to parse JSON responses with a clear error when the body isn't JSON
-export async function expectJson<T = any>(res: Response): Promise<T> {
+export async function expectJson<T = unknown>(res: Response): Promise<T> {
   const contentType = res.headers.get('content-type') ?? '';
   const text = await res.text();
 
