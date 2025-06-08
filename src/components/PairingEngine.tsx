@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import apiFetch from '../utils/apiFetch';
+import { apiFetch } from '@/lib/api';
 
 type Pairing = {
   id: number;
@@ -46,7 +46,9 @@ const PairingEngine: React.FC = () => {
       <h2>Round {currentRound}</h2>
       <select
         value={pairingAlgorithm}
-        onChange={e => setPairingAlgorithm(e.target.value as any)}
+        onChange={e =>
+          setPairingAlgorithm(e.target.value as 'swiss' | 'power' | 'random')
+        }
       >
         <option value="swiss">Swiss</option>
         <option value="power">Power</option>
