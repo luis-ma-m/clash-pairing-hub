@@ -152,6 +152,15 @@ cp .env.example .env
 
 The `.env` file contains configuration used by Vite. The main variable is `VITE_API_BASE_URL`, which defines the backend API endpoint. Its default value is `http://localhost:3001`.
 
+Additional variables are required for Supabase integration:
+
+```
+SUPABASE_URL=your Supabase project URL
+SUPABASE_ANON_KEY=your anon key
+VITE_SUPABASE_URL=your Supabase project URL
+VITE_SUPABASE_ANON_KEY=your anon key
+```
+
 3. **Start the development server:**
    ```bash
    npm run dev

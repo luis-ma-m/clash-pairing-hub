@@ -13,13 +13,7 @@ import LiveAnalytics from '@/components/LiveAnalytics';
 import UserRoleManager from '@/components/UserRoleManager';
 import { Trophy, Users, Shuffle, Target, BarChart3, Settings } from 'lucide-react';
 
-type UserRole = 'SuperAdmin' | 'TabDirector' | 'Judge' | 'TeamCaptain' | 'PublicViewer';
-
 const Index = () => {
-  const [currentUser] = useState<{ name: string; role: UserRole }>({
-    name: 'Dr. Sarah Mitchell',
-    role: 'TabDirector'
-  });
   
   const [activeTournament] = useState({
     name: 'Oxford Invitational 2024',
@@ -31,7 +25,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardNav currentUser={currentUser} activeTournament={activeTournament} />
+      <DashboardNav activeTournament={activeTournament} />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
@@ -44,9 +38,6 @@ const Index = () => {
               <Badge variant={activeTournament.status === 'In Progress' ? 'default' : 'secondary'}>
                 {activeTournament.status}
               </Badge>
-              <div className="text-sm text-slate-600">
-                Welcome back, {currentUser.name}
-              </div>
             </div>
           </div>
         </div>
@@ -100,7 +91,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="admin">
-            <UserRoleManager currentUser={currentUser} />
+            <UserRoleManager currentUser={null} />
           </TabsContent>
         </Tabs>
       </main>
