@@ -1,11 +1,19 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import tseslint from "typescript-eslint";
+import js from "@eslint/js"
+import globals from "globals"
+import reactHooks from "eslint-plugin-react-hooks"
+import reactRefresh from "eslint-plugin-react-refresh"
+import tseslint from "typescript-eslint"
 
 export default tseslint.config(
-  { ignores: ["dist", "server", "jest.config.cjs", "jest.setup.ts", "src/components/__tests__/TeamRoster.test.tsx"] },
+  {
+    ignores: [
+      "dist",
+      "server",
+      "jest.config.cjs",
+      "jest.setup.ts",
+      "src/components/__tests__/TeamRoster.test.tsx",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -26,4 +34,4 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   }
-);
+)

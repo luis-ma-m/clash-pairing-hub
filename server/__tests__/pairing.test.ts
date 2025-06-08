@@ -9,14 +9,14 @@ const teams = [
 ];
 
 describe('generateSwissPairings', () => {
-  it('orders teams by wins then speaker points', () => {
-    const pairings = generateSwissPairings(2, teams);
+  it('orders teams by wins then speaker points', async () => {
+    const pairings = await generateSwissPairings(2, teams);
     expect(pairings[0].proposition).toBe('Bravo');
     expect(pairings[0].opposition).toBe('Alpha');
   });
 
-  it('pairs adjacent teams', () => {
-    const pairings = generateSwissPairings(2, teams);
+  it('pairs adjacent teams', async () => {
+    const pairings = await generateSwissPairings(2, teams);
     expect(pairings).toHaveLength(2);
     expect(pairings[1].proposition).toBe('Charlie');
     expect(pairings[1].opposition).toBe('Delta');

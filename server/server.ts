@@ -47,6 +47,18 @@ const teamSchema = z.object({
   speakerPoints: z.number().optional(),
 })
 
+const speakerSchema = z.object({
+  team_id: z.string(),
+  name: z.string(),
+  position: z.number().optional(),
+})
+
+const roundSchema = z.object({
+  tournament_id: z.string(),
+  round_number: z.number(),
+  status: z.string().optional(),
+})
+
 const pairingSchema = z.object({
   round: z.number(),
   room: z.string(),
@@ -82,6 +94,14 @@ const userSchema = z.object({
   role: z.string(),
 })
 
+const tournamentSchema = z.object({
+  name: z.string(),
+  format: z.string(),
+  status: z.string().optional(),
+  settings: z.any().optional(),
+  owner_id: z.string().uuid().optional(),
+})
+
 // ─── Bracket Generation Schema ─────────────────────────────────────────────
 
 const bracketSchema = z.object({
@@ -103,6 +123,67 @@ const checkSupabaseConfig = (
   }
   next()
 }
+
+// ─── Tournaments CRUD ───────────────────────────────────────────────────────
+
+app.get('/api/tournaments', checkSupabaseConfig, async (_req, res) => {
+  const { data, error } = await supabase.from('tournaments').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/tournaments', async (req, res) => {
+  const parsed = tournamentSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('tournaments')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const parsed = tournamentSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('tournaments')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const { data, error } = await supabase
+    .from('tournaments')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
@@ -157,6 +238,67 @@ app.delete('/api/teams/:id', async (req, res) => {
   const id = Number(req.params.id)
   const { data, error } = await supabase
     .from('teams')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+// ─── Speakers CRUD ─────────────────────────────────────────────────────────
+
+app.get('/api/speakers', async (_req, res) => {
+  const { data, error } = await supabase.from('speakers').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('speakers')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/speakers', async (req, res) => {
+  const parsed = speakerSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('speakers')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const parsed = speakerSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('speakers')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/speakers/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('speakers')
     .delete()
     .eq('id', id)
     .select()
@@ -265,6 +407,8 @@ app.delete('/api/pairings/:id', async (req, res) => {
 
 app.post('/api/pairings/swiss', async (req, res) => {
   const round = req.body?.round
+  const rooms = Array.isArray(req.body?.rooms) ? req.body.rooms : []
+  const judges = Array.isArray(req.body?.judges) ? req.body.judges : []
   if (typeof round !== 'number') {
     return res.status(400).json({ error: 'round is required' })
   }
@@ -272,7 +416,10 @@ app.post('/api/pairings/swiss', async (req, res) => {
   const { data: teams, error: tErr } = await supabase.from('teams').select('*')
   if (tErr) return res.status(500).json({ error: tErr.message })
 
-  const pairings = generateSwissPairings(round, teams || [])
+  const { data: prev, error: hErr } = await supabase.from('pairings').select('*')
+  if (hErr) return res.status(500).json({ error: hErr.message })
+
+  const pairings = await generateSwissPairings(round, teams || [], prev || [], [], rooms, judges)
 
   const { data: inserted, error: pErr } = await supabase
     .from('pairings')
@@ -283,6 +430,67 @@ app.post('/api/pairings/swiss', async (req, res) => {
   await supabase.from('settings').update({ currentRound: round }).eq('id', 1)
 
   res.status(201).json(inserted)
+})
+
+// ─── Rounds CRUD ───────────────────────────────────────────────────────────
+
+app.get('/api/rounds', async (_req, res) => {
+  const { data, error } = await supabase.from('rounds').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('rounds')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/rounds', async (req, res) => {
+  const parsed = roundSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('rounds')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const parsed = roundSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('rounds')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/rounds/:id', async (req, res) => {
+  const id = req.params.id
+  const { data, error } = await supabase
+    .from('rounds')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
 })
 
 // ─── Debates CRUD ──────────────────────────────────────────────────────────

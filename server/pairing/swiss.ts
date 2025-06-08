@@ -1,3 +1,11 @@
+import { loadConstraintSettings } from '../../src/lib/pairing/config';
+import {
+  Constraint,
+  ConstraintContext,
+  applyConstraints,
+  Pairing as BasePairing,
+} from '../../src/lib/pairing/constraints';
+
 export type Team = {
   id: number;
   name: string;
@@ -5,22 +13,24 @@ export type Team = {
   speakerPoints: number;
 };
 
-export type Pairing = {
-  round: number;
-  room: string;
-  proposition: string;
-  opposition: string;
-  judge: string;
-  status: string;
-  propWins: boolean | null;
-};
+export type Pairing = BasePairing;
 
-export function generateSwissPairings(round: number, teams: Team[]): Pairing[] {
+export async function generateSwissPairings(
+  round: number,
+  teams: Team[],
+  previousPairings: Pairing[] = [],
+  constraints: Constraint[] = [],
+  rooms: string[] = [],
+  judges: string[] = [],
+): Promise<Pairing[]> {
+  const settings = await loadConstraintSettings();
+  const active = constraints.filter(c => settings[c.type as keyof typeof settings]);
+
   const sorted = [...teams].sort(
     (a, b) =>
       b.wins - a.wins ||
       b.speakerPoints - a.speakerPoints ||
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
   );
 
   const pairings: Pairing[] = [];
@@ -30,13 +40,14 @@ export function generateSwissPairings(round: number, teams: Team[]): Pairing[] {
     if (!prop || !opp) break;
     pairings.push({
       round,
-      room: `R${round}-${pairings.length + 1}`,
+      room: rooms[i / 2] || `R${round}-${pairings.length + 1}`,
       proposition: prop.name,
       opposition: opp.name,
-      judge: 'TBD',
+      judge: judges[i / 2] || 'TBD',
       status: 'scheduled',
       propWins: null,
     });
   }
-  return pairings;
+  const context: ConstraintContext = { previousPairings, roomList: rooms };
+  return applyConstraints(pairings, active, context);
 }
