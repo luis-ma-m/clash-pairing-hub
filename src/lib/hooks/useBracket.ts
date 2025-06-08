@@ -4,7 +4,7 @@ import { supabase } from '../supabase';
 export interface BracketRecord {
   id: string;
   type: 'single' | 'double';
-  data: any;
+  data: unknown;
 }
 
 export function useBracket() {
