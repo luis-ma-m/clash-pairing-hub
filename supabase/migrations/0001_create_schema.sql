@@ -62,6 +62,20 @@ CREATE TABLE IF NOT EXISTS public.rounds (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Pairings
+CREATE TABLE IF NOT EXISTS public.pairings (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    round integer NOT NULL,
+    room text NOT NULL,
+    proposition text NOT NULL,
+    opposition text NOT NULL,
+    judge text,
+    status text DEFAULT 'scheduled',
+    "propWins" boolean,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 -- Debates
 CREATE TABLE IF NOT EXISTS public.debates (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -91,15 +105,25 @@ CREATE TABLE IF NOT EXISTS public.scores (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Settings
+CREATE TABLE IF NOT EXISTS public.settings (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "currentRound" integer NOT NULL DEFAULT 1,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 -- Enable RLS and create policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.speakers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rounds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pairings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.debates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.debate_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
 -- Common policy helpers
 CREATE POLICY "All select" ON public.users FOR SELECT USING (auth.uid() = id OR current_user_role() = 'admin');
@@ -118,6 +142,9 @@ CREATE POLICY "Manage speakers" ON public.speakers FOR ALL USING (current_user_r
 CREATE POLICY "Read rounds" ON public.rounds FOR SELECT USING (true);
 CREATE POLICY "Manage rounds" ON public.rounds FOR ALL USING (current_user_role() IN ('admin','organizer'));
 
+CREATE POLICY "Read pairings" ON public.pairings FOR SELECT USING (true);
+CREATE POLICY "Manage pairings" ON public.pairings FOR ALL USING (current_user_role() IN ('admin','organizer'));
+
 CREATE POLICY "Read debates" ON public.debates FOR SELECT USING (true);
 CREATE POLICY "Manage debates" ON public.debates FOR ALL USING (current_user_role() IN ('admin','organizer'));
 
@@ -126,4 +153,7 @@ CREATE POLICY "Manage debate teams" ON public.debate_teams FOR ALL USING (curren
 
 CREATE POLICY "Read scores" ON public.scores FOR SELECT USING (true);
 CREATE POLICY "Manage scores" ON public.scores FOR ALL USING (current_user_role() IN ('admin','organizer'));
+
+CREATE POLICY "Read settings" ON public.settings FOR SELECT USING (true);
+CREATE POLICY "Manage settings" ON public.settings FOR ALL USING (current_user_role() IN ('admin','organizer'));
 
