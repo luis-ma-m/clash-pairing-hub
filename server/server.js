@@ -46,6 +46,45 @@ const scores = {
   ]
 };
 
+const users = [
+  {
+    id: 1,
+    name: 'Dr. Sarah Mitchell',
+    email: 'sarah.mitchell@oxford.ac.uk',
+    role: 'TabDirector',
+    permissions: ['manage_tournament', 'view_all', 'edit_scores'],
+    lastActive: '2 min ago',
+    status: 'active'
+  },
+  {
+    id: 2,
+    name: 'Prof. Michael Brown',
+    email: 'michael.brown@cambridge.ac.uk',
+    role: 'Judge',
+    permissions: ['view_assigned', 'enter_scores'],
+    lastActive: '5 min ago',
+    status: 'active'
+  },
+  {
+    id: 3,
+    name: 'Alice Johnson',
+    email: 'alice.johnson@oxford.ac.uk',
+    role: 'TeamCaptain',
+    permissions: ['view_team', 'submit_registration'],
+    lastActive: '1 hour ago',
+    status: 'active'
+  },
+  {
+    id: 4,
+    name: 'System Admin',
+    email: 'admin@debatedesk.com',
+    role: 'SuperAdmin',
+    permissions: ['full_access'],
+    lastActive: '1 day ago',
+    status: 'active'
+  }
+];
+
 app.get('/api/teams', (req, res) => {
   res.json(teams);
 });
@@ -71,6 +110,33 @@ app.get('/api/debates', (req, res) => {
 
 app.get('/api/scores/:room', (req, res) => {
   res.json(scores[req.params.room] || []);
+});
+
+// ----- User Endpoints -----
+app.get('/api/users', (req, res) => {
+  res.json(users);
+});
+
+app.post('/api/users', (req, res) => {
+  const user = { id: users.length + 1, ...req.body };
+  users.push(user);
+  res.status(201).json(user);
+});
+
+app.put('/api/users/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return res.status(404).json({ error: 'User not found' });
+  users[index] = { ...users[index], ...req.body };
+  res.json(users[index]);
+});
+
+app.delete('/api/users/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return res.status(404).json({ error: 'User not found' });
+  const removed = users.splice(index, 1)[0];
+  res.json(removed);
 });
 
 const PORT = process.env.PORT || 3001;
