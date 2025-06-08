@@ -77,7 +77,7 @@ const TeamRoster = () => {
   });
 
   const updateTeam = async (payload: { id: number; updates: Partial<Team> }) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${payload.id}`, {
+    const res = await apiFetch(`/api/teams/${payload.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload.updates)
@@ -87,7 +87,7 @@ const TeamRoster = () => {
   };
 
   const deleteTeam = async (id: number) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${id}`, {
+    const res = await apiFetch(`/api/teams/${id}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Failed to delete team');

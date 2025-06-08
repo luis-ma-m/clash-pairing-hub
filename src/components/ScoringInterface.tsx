@@ -61,7 +61,7 @@ const ScoringInterface = () => {
 
   const { mutate: submitScores } = useMutation({
     mutationFn: async (scores: SpeakerScore[]) => {
-      const res = await fetch('http://localhost:3001/api/scores', {
+      const res = await apiFetch('/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ room: selectedDebate, scores })

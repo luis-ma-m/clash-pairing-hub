@@ -8,8 +8,8 @@ export default {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.jest.json',
-      useESM: true
-    }
+      tsconfig: '<rootDir>/tsconfig.test.json'
+    },
+    useESM: true
   }
-};
+}

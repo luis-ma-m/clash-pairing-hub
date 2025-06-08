@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "types": ["jest", "@testing-library/jest-dom", "node"],
+    "esModuleInterop": true
+  },
+  "include": ["src", "server"]
+}
