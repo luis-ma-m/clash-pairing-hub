@@ -178,6 +178,27 @@ npm run server
 ```
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
+User data for the `/api/users` routes is persisted to `server/db.json`.
+
+### Running Tests
+
+Install dependencies if you haven't already:
+
+```bash
+npm install
+```
+
+Alternatively you can use **Bun**:
+
+```bash
+bun install
+```
+
+Then execute all unit tests:
+
+```bash
+npm test --silent
+```
 
 ## 🎯 Success Criteria
 

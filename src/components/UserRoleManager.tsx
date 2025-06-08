@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/components/ui/sonner';
+import { apiFetch } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +45,11 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
     return res.json();
   };
 
-  const { data: users = [] } = useQuery<User[]>({ queryKey: ['users'], queryFn: fetchUsers });
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+    onError: () => toast('Failed to fetch users')
+  });
 
   const addUser = async () => {
     const res = await apiFetch('/api/users', {
@@ -71,9 +77,21 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
     return res.json();
   };
 
-  const { mutateAsync: createUser } = useMutation({ mutationFn: addUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
-  const { mutateAsync: editUser } = useMutation({ mutationFn: updateUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
-  const { mutateAsync: removeUser } = useMutation({ mutationFn: deleteUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
+  const { mutateAsync: createUser } = useMutation({
+    mutationFn: addUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to add user')
+  });
+  const { mutateAsync: editUser } = useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to update user')
+  });
+  const { mutateAsync: removeUser } = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to delete user')
+  });
 
   const rolePermissions = {
     SuperAdmin: ['Full system access', 'User management', 'Tournament creation', 'Data export'],

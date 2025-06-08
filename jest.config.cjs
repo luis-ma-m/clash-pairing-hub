@@ -1,22 +1,19 @@
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+// jest.config.js
+export default {
+  preset: 'ts-jest/presets/default-esm',
+  // Most tests (components) run in a jsdom environment; server tests can override as needed
+  testEnvironment: 'jsdom',
+
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
+
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  transformIgnorePatterns: ['/node_modules/(?!lowdb)'],
+
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  transform: {
-    '^.+\\.[tj]sx?$': [
-      'ts-jest',
-      {
-        useESM: true,
-        tsconfig: '<rootDir>/tsconfig.test.json'
-      }
-    ]
-  },
+
   globals: {
     'ts-jest': {
       tsconfig: '<rootDir>/tsconfig.test.json',

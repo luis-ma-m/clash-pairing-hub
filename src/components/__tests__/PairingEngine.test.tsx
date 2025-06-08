@@ -12,26 +12,25 @@ const mockResponse = {
       opposition: 'Team B',
       judge: 'Judge',
       status: 'completed',
-      propWins: true
-    }
+      propWins: true,
+    },
   ],
-  currentRound: 1
+  currentRound: 1,
 };
 
 globalThis.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve(mockResponse)
+    json: () => Promise.resolve(mockResponse),
   })
 ) as jest.Mock;
 
-const renderComponent = () => {
-  return render(
+const renderComponent = () =>
+  render(
     <QueryClientProvider client={new QueryClient()}>
       <PairingEngine />
     </QueryClientProvider>
   );
-};
 
 describe('PairingEngine', () => {
   it('renders pairings from API', async () => {

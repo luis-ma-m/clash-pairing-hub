@@ -8,11 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- FS-based JSON “database” helper -------------------------------------
+// ─── FS-based JSON “database” helper ───────────────────────────────────────
 
 const DB_FILE = path.join(process.cwd(), 'server', 'db.json');
 
-interface Database {
+export interface Database {
   teams: any[];
   pairings: any[];
   debates: any[];
@@ -35,7 +35,7 @@ async function readDb(): Promise<Database> {
     const text = await fs.readFile(DB_FILE, 'utf8');
     return { ...defaultData, ...JSON.parse(text) };
   } catch {
-    // If file missing/corrupt, write fresh default and return it
+    // If missing or corrupted, write a fresh default file
     await fs.writeFile(DB_FILE, JSON.stringify(defaultData, null, 2));
     return { ...defaultData };
   }
@@ -98,9 +98,9 @@ app.get('/api/pairings', async (_req, res) => {
 app.get('/api/pairings/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const pairing = db.pairings.find(p => p.id === id);
-  if (!pairing) return res.status(404).json({ error: 'Not found' });
-  res.json(pairing);
+  const p = db.pairings.find(x => x.id === id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  res.json(p);
 });
 
 app.post('/api/pairings', async (req, res) => {
@@ -114,7 +114,7 @@ app.post('/api/pairings', async (req, res) => {
 app.put('/api/pairings/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.pairings.findIndex(p => p.id === id);
+  const idx = db.pairings.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.pairings[idx] = { ...db.pairings[idx], ...req.body };
   await writeDb(db);
@@ -124,7 +124,7 @@ app.put('/api/pairings/:id', async (req, res) => {
 app.delete('/api/pairings/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.pairings.findIndex(p => p.id === id);
+  const idx = db.pairings.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const [removed] = db.pairings.splice(idx, 1);
   await writeDb(db);
@@ -141,9 +141,9 @@ app.get('/api/debates', async (_req, res) => {
 app.get('/api/debates/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const debate = db.debates.find(d => d.id === id);
-  if (!debate) return res.status(404).json({ error: 'Not found' });
-  res.json(debate);
+  const d = db.debates.find(x => x.id === id);
+  if (!d) return res.status(404).json({ error: 'Not found' });
+  res.json(d);
 });
 
 app.post('/api/debates', async (req, res) => {
@@ -157,7 +157,7 @@ app.post('/api/debates', async (req, res) => {
 app.put('/api/debates/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.debates.findIndex(d => d.id === id);
+  const idx = db.debates.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.debates[idx] = { ...db.debates[idx], ...req.body };
   await writeDb(db);
@@ -167,7 +167,7 @@ app.put('/api/debates/:id', async (req, res) => {
 app.delete('/api/debates/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.debates.findIndex(d => d.id === id);
+  const idx = db.debates.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const [removed] = db.debates.splice(idx, 1);
   await writeDb(db);
@@ -178,8 +178,7 @@ app.delete('/api/debates/:id', async (req, res) => {
 
 app.get('/api/scores/:room', async (req, res) => {
   const db = await readDb();
-  const room = req.params.room;
-  res.json(db.scores.filter(s => s.room === room));
+  res.json(db.scores.filter(s => s.room === req.params.room));
 });
 
 app.post('/api/scores', async (req, res) => {
@@ -200,9 +199,9 @@ app.get('/api/users', async (_req, res) => {
 app.get('/api/users/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const user = db.users.find(u => u.id === id);
-  if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json(user);
+  const u = db.users.find(x => x.id === id);
+  if (!u) return res.status(404).json({ error: 'Not found' });
+  res.json(u);
 });
 
 app.post('/api/users', async (req, res) => {
@@ -216,7 +215,7 @@ app.post('/api/users', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.users.findIndex(u => u.id === id);
+  const idx = db.users.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.users[idx] = { ...db.users[idx], ...req.body };
   await writeDb(db);
@@ -226,7 +225,7 @@ app.put('/api/users/:id', async (req, res) => {
 app.delete('/api/users/:id', async (req, res) => {
   const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.users.findIndex(u => u.id === id);
+  const idx = db.users.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const [removed] = db.users.splice(idx, 1);
   await writeDb(db);
@@ -263,15 +262,13 @@ app.get('/api/analytics/standings', async (_req, res) => {
   res.json(standings);
 });
 
-// 2) Speaker averages
+// 2) Speakers
 app.get('/api/analytics/speakers', async (_req, res) => {
   const db = await readDb();
   const map = new Map<string, { name: string; team: string; total: number; count: number }>();
 
   db.scores.forEach(s => {
-    if (!map.has(s.speaker)) {
-      map.set(s.speaker, { name: s.speaker, team: s.team, total: 0, count: 0 });
-    }
+    if (!map.has(s.speaker)) map.set(s.speaker, { name: s.speaker, team: s.team, total: 0, count: 0 });
     const e = map.get(s.speaker)!;
     e.total += s.total || 0;
     e.count++;
@@ -285,7 +282,7 @@ app.get('/api/analytics/speakers', async (_req, res) => {
   res.json(speakers);
 });
 
-// 3) Round performance
+// 3) Performance
 app.get('/api/analytics/performance', async (_req, res) => {
   const db = await readDb();
   const rounds = new Map<number, { round: number; total: number; debates: number }>();
@@ -320,7 +317,7 @@ app.get('/api/analytics/results', async (_req, res) => {
   res.json({ propWins, oppWins, ties });
 });
 
-// ─── Server startup ────────────────────────────────────────────────────────
+// ─── Start server ─────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3001;
 if (process.env.NODE_ENV !== 'test') {
