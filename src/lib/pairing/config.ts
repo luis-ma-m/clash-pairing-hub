@@ -35,8 +35,10 @@ export async function loadConstraintSettings(): Promise<ConstraintSettings> {
     // Start with the default JSON configuration
     const cfg: ConstraintSettings = { ...(defaultConfig as ConstraintSettings) }
 
+    const rows = data as ConstraintRow[]
+
     // Merge any overrides from the database
-    for (const row of data) {
+    for (const row of rows) {
       if (row.name in cfg) {
         cfg[row.name] = row.enabled
       }
