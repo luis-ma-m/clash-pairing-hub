@@ -239,11 +239,11 @@ The platform aims to enable tournament administrators to:
 - Basic API endpoints
 - Data validation and security
 
-### Phase 2: Pairing Algorithms (Current Priority)
-- Swiss system implementation
-- Elimination bracket generation
-- Constraint satisfaction solver
-- Algorithm testing and validation
+### Phase 2: Core Tournament Management (Weeks 4-6)
+- Tournament creation with format selection
+- Team and speaker management linked to tournaments
+- Round tracking with progression logic
+- Tournament status and settings management
 
 ### Phase 3: Real-time Features
 - WebSocket integration
