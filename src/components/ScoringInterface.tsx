@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,25 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, Trophy, User, Clock } from 'lucide-react';
-import { apiFetch, expectJson } from "@/lib/api";
+import {
+  useDebates,
+  useSpeakerScores,
+  useSubmitSpeakerScores,
+  useSubmitTeamScores,
+  type SpeakerScore,
+  type Debate,
+} from "@/lib/hooks/useScoring";
 
-type Debate = {
-  room: string;
-  proposition: string;
-  opposition: string;
-  judge: string;
-  status: string;
-};
-
-type SpeakerScore = {
-  speaker: string;
-  team: string;
-  position: string;
-  content: number;
-  style: number;
-  strategy: number;
-  total: number;
-};
 
 const ScoringInterface = () => {
   const [selectedDebate, setSelectedDebate] = useState('');
@@ -36,77 +25,16 @@ const ScoringInterface = () => {
   const [propMargin, setPropMargin] = useState(0);
   const [oppPoints, setOppPoints] = useState(0);
   const [oppMargin, setOppMargin] = useState(0);
-  const queryClient = useQueryClient();
 
-  const fetchDebates = async () => {
-    const res = await apiFetch('/api/debates');
-    if (!res.ok) throw new Error('Failed fetching debates');
-    return expectJson(res);
-  };
-
-  const { data: debates = [] } = useQuery<Debate[]>({
-    queryKey: ['debates'],
-    queryFn: fetchDebates,
-    // Poll periodically so judges get the latest available debates
-    refetchInterval: 5000
-  });
-
-  const fetchSpeakerScores = async () => {
-    if (!selectedDebate) return [];
-    const res = await apiFetch(`/api/scores/${selectedDebate}`);
-    if (!res.ok) throw new Error('Failed fetching scores');
-    return expectJson(res);
-  };
-
-  const { data: speakerScores = [] } = useQuery<SpeakerScore[]>({
-    queryKey: ['scores', selectedDebate],
-    queryFn: fetchSpeakerScores,
-    enabled: !!selectedDebate,
-    // Keep scores in sync while judges input data
-    refetchInterval: 5000
-  });
+  const { debates } = useDebates();
+  const { speakerScores } = useSpeakerScores(selectedDebate);
 
   useEffect(() => {
     setScoresData(speakerScores);
   }, [speakerScores]);
 
-  const { mutate: submitScores } = useMutation({
-    mutationFn: async (scores: SpeakerScore[]) => {
-      const res = await apiFetch('/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: selectedDebate, scores })
-      });
-      if (!res.ok) throw new Error('Failed submitting scores');
-      return expectJson(res);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', selectedDebate] });
-      queryClient.invalidateQueries({ queryKey: ['teams'] });
-    }
-  });
-
-  const { mutate: submitTeamScores } = useMutation({
-    mutationFn: async (payload: {
-      proposition: { points: number; margin: number };
-      opposition: { points: number; margin: number };
-    }) => {
-      const res = await apiFetch('/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room: selectedDebate,
-          teamScores: payload,
-        }),
-      });
-      if (!res.ok) throw new Error('Failed submitting team scores');
-      return expectJson(res);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', selectedDebate] });
-      queryClient.invalidateQueries({ queryKey: ['teams'] });
-    },
-  });
+  const { mutate: submitScores } = useSubmitSpeakerScores(selectedDebate);
+  const { mutate: submitTeamScores } = useSubmitTeamScores(selectedDebate);
 
   const handleSubmit = () => {
     const valid = scoresData.every(

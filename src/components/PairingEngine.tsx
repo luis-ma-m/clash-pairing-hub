@@ -1,43 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, expectJson } from '@/lib/api';
-
-type Pairing = {
-  id: number;
-  round: number;
-  room: string;
-  proposition: string;
-  opposition: string;
-  judge: string;
-  status: string;
-  propWins: boolean | null;
-};
-
-type PairingsResponse = {
-  pairings: Pairing[];
-  currentRound: number;
-};
+import { usePairings, type Pairing } from '@/lib/hooks/usePairings';
 
 const PairingEngine: React.FC = () => {
   const [pairingAlgorithm, setPairingAlgorithm] = useState<'swiss' | 'power' | 'random'>('swiss');
-  const queryClient = useQueryClient();
-
-  // ─── Fetch Pairings ──────────────────────────────────────────────────────
-  const fetchPairings = async (): Promise<PairingsResponse> => {
-    const res = await apiFetch('/api/pairings');
-    if (!res.ok) {
-      throw new Error('Failed fetching pairings');
-    }
-    return expectJson(res);
-  };
-
-  const { data } = useQuery<PairingsResponse>({
-    queryKey: ['pairings'],
-    queryFn: fetchPairings
-  });
-
-  const pairings     = data?.pairings     ?? [];
-  const currentRound = data?.currentRound ?? 0;
+  const { pairings, currentRound } = usePairings();
 
   return (
     <div>

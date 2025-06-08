@@ -3,30 +3,28 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PairingEngine from '../PairingEngine';
+import { supabase } from '@/lib/supabase';
 
-const mockResponse = {
-  pairings: [
-    {
-      id: 1,
-      room: 'A1',
-      proposition: 'Team A',
-      opposition: 'Team B',
-      judge: 'Judge',
-      status: 'completed',
-      propWins: true,
-    },
-  ],
-  currentRound: 1,
-};
+jest.mock('@/lib/supabase');
 
-globalThis.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    headers: { get: () => 'application/json' },
-    json: () => Promise.resolve(mockResponse),
-    text: () => Promise.resolve(JSON.stringify(mockResponse)),
-  })
-) as jest.Mock;
+const mockPairings = [
+  {
+    id: 1,
+    round: 1,
+    room: 'A1',
+    proposition: 'Team A',
+    opposition: 'Team B',
+    judge: 'Judge',
+    status: 'completed',
+    propWins: true,
+  },
+];
+
+const fromMock = jest.fn().mockReturnValue({
+  select: jest.fn().mockResolvedValue({ data: mockPairings, error: null }),
+});
+
+(supabase as any).from = fromMock;
 
 const renderComponent = async () =>
   await act(async () => {
