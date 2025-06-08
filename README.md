@@ -141,6 +141,16 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    npm install
    ```
 
+### Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file contains configuration used by Vite. The main variable is `VITE_API_BASE_URL`, which defines the backend API endpoint. Its default value is `http://localhost:3001`.
+
 3. **Start the development server:**
    ```bash
    npm run dev
