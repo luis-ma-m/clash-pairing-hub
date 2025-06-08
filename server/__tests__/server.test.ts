@@ -1,24 +1,26 @@
 /** @jest-environment node */
 import request from 'supertest';
 import type { Express } from 'express';
-import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 
-// Read the seed data using the real fs module before mocking
-const fsActual = jest.requireActual('fs') as typeof import('fs');
-const dbPath = path.join(__dirname, '../db.json');
-const seed = JSON.parse(fsActual.readFileSync(dbPath, 'utf8'));
+// Inline seed data used by the mocked Supabase client
+const seed = {
+  teams: [
+    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'] }
+  ],
+  pairings: [
+    { id: 1, round: 1, room: 'A1', proposition: 'Alpha', opposition: 'Beta', judge: 'Judge', status: 'scheduled', propWins: null }
+  ],
+  scores: [
+    { id: 1, room: 'A1', speaker: 'A1', team: 'Alpha', total: 75 }
+  ],
+  settings: [
+    { id: 1, currentRound: 1 }
+  ],
+  debates: [],
+  users: []
+};
 let data: any = JSON.parse(JSON.stringify(seed));
-
-// Mock fs.promises so the server reads/writes from in-memory data
-jest.doMock('fs', () => ({
-  promises: {
-    readFile: async () => JSON.stringify(data),
-    writeFile: async (_: string, content: string) => {
-      data = JSON.parse(content);
-    },
-  },
-}));
 
 // Mock Supabase client methods to operate on the in-memory data
 jest.mock('@supabase/supabase-js', () => {
@@ -57,6 +59,8 @@ jest.mock('@supabase/supabase-js', () => {
 
 let app: Express;
 beforeAll(async () => {
+  process.env.SUPABASE_URL = 'http://localhost';
+  process.env.SUPABASE_ANON_KEY = 'testkey';
   const mod = await import('../server');
   app = mod.default as Express;
 });

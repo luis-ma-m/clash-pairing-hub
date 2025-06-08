@@ -1,17 +1,62 @@
 {
   "teams": [
-    { "id": 1, "name": "Alpha", "organization": "Org", "speakers": ["A", "B"] }
+    {
+      "id": 1,
+      "name": "Alpha",
+      "organization": "Org",
+      "speakers": ["A1", "A2"],
+      "wins": 0,
+      "losses": 0,
+      "speakerPoints": 0
+    }
   ],
   "pairings": [
-    { "id": 1, "round": 1, "room": "A1", "proposition": "Alpha", "opposition": "Beta", "status": "pending", "propWins": null }
+    {
+      "id": 1,
+      "round": 1,
+      "room": "A1",
+      "proposition": "Alpha",
+      "opposition": "Beta",
+      "judge": "Judge",
+      "status": "pending",
+      "propWins": null
+    }
+  ],
+  "debates": [
+    {
+      "id": 1,
+      "room": "A1",
+      "proposition": "Alpha",
+      "opposition": "Beta",
+      "judge": "Judge",
+      "status": "pending"
+    }
   ],
   "scores": [
-    { "id": 1, "room": "A1", "team": "Alpha", "speaker": "A", "total": 75 }
+    {
+      "id": 1,
+      "room": "A1",
+      "team": "Alpha",
+      "speaker": "Speaker 1",
+      "position": "PM",
+      "content": 1,
+      "style": 1,
+      "strategy": 1,
+      "total": 3
+    }
   ],
   "settings": [
-    { "id": 1, "currentRound": 1 }
+    {
+      "id": 1,
+      "currentRound": 1
+    }
   ],
   "users": [
-    { "id": 1, "name": "Admin", "email": "admin@example.com", "role": "Judge" }
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@example.com",
+      "role": "Judge"
+    }
   ]
 }
