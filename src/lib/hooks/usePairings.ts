@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 
 export type Pairing = {
@@ -13,6 +13,8 @@ export type Pairing = {
 };
 
 export function usePairings() {
+  const queryClient = useQueryClient();
+
   const { data } = useQuery<Pairing[]>({
     queryKey: ['pairings'],
     queryFn: async () => {
@@ -25,5 +27,18 @@ export function usePairings() {
   const pairings = data ?? [];
   const currentRound = pairings.reduce((m, p) => Math.max(m, p.round), 0);
 
-  return { pairings, currentRound };
+  const generatePairings = useMutation({
+    mutationFn: async (round: number) => {
+      const res = await fetch('/api/pairings/swiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ round }),
+      });
+      if (!res.ok) throw new Error('Failed to generate pairings');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings'] }),
+  });
+
+  return { pairings, currentRound, generatePairings: generatePairings.mutateAsync };
 }

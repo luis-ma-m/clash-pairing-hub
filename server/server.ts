@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { registerAnalyticsRoutes } from './analytics';
+import { generateSwissPairings } from './pairing/swiss';
 
 const app = express();
 app.use(cors());
@@ -194,6 +195,32 @@ app.delete('/api/pairings/:id', async (req, res) => {
     .single();
   if (error) return res.status(404).json({ error: error.message });
   res.json(data);
+});
+
+// Generate Swiss pairings for a round
+app.post('/api/pairings/swiss', async (req, res) => {
+  const round = req.body?.round;
+  if (typeof round !== 'number') {
+    return res.status(400).json({ error: 'round is required' });
+  }
+
+  const { data: teams, error: tErr } = await supabase.from('teams').select('*');
+  if (tErr) return res.status(500).json({ error: tErr.message });
+
+  const pairings = generateSwissPairings(round, teams || []);
+
+  const { data: inserted, error: pErr } = await supabase
+    .from('pairings')
+    .insert(pairings)
+    .select();
+  if (pErr) return res.status(400).json({ error: pErr.message });
+
+  await supabase
+    .from('settings')
+    .update({ currentRound: round })
+    .eq('id', 1);
+
+  res.status(201).json(inserted);
 });
 
 // ─── Debates CRUD ──────────────────────────────────────────────────────────
