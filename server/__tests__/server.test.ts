@@ -30,16 +30,27 @@ describe('API Endpoints', () => {
     expect(res.body.name).toBe(team.name);
   });
 
-  it('GET /api/pairings should return pairings', async () => {
+  it('GET /api/pairings should return pairings with currentRound', async () => {
     const res = await request(app).get('/api/pairings');
     expect(res.status).toBe(200);
+    // ensure shape: { pairings: [...], currentRound: number }
+    expect(res.body).toHaveProperty('pairings');
     expect(Array.isArray(res.body.pairings)).toBe(true);
+    expect(res.body).toHaveProperty('currentRound');
   });
 
   it('GET /api/scores/:room should return scores', async () => {
     const res = await request(app).get('/api/scores/A1');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('GET /api/tournament/stats should return stats', async () => {
+    const res = await request(app).get('/api/tournament/stats');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('currentRound');
+    expect(res.body).toHaveProperty('totalRounds');
+    expect(res.body).toHaveProperty('quickStats');
   });
 
   it('POST /api/scores should save a score', async () => {

@@ -5,7 +5,15 @@ import PairingEngine from '../PairingEngine';
 
 const mockResponse = {
   pairings: [
-    { id: 1, room: 'A1', proposition: 'Team A', opposition: 'Team B', judge: 'Judge', status: 'completed', propWins: true }
+    {
+      id: 1,
+      room: 'A1',
+      proposition: 'Team A',
+      opposition: 'Team B',
+      judge: 'Judge',
+      status: 'completed',
+      propWins: true
+    }
   ],
   currentRound: 1
 };

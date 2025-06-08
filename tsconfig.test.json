@@ -6,7 +6,8 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["jest", "@testing-library/jest-dom", "node"]
   },
-  "include": ["src", "server"]
+  "include": ["src", "server", "**/*.test.ts", "**/*.test.tsx"]
 }
