@@ -1,22 +1,46 @@
-import { supabase } from '../supabase';
-import defaultConfig from './constraints-config.json';
+// src/lib/settings/loadConstraintSettings.ts
+import { supabase } from '../supabase'
+import defaultConfig from './constraints-config.json'
 
 export interface ConstraintSettings {
-  NoRepeatMatch: boolean;
-  JudgeAvailability: boolean;
-  RoomCapacity: boolean;
+  NoRepeatMatch: boolean
+  JudgeAvailability: boolean
+  RoomCapacity: boolean
 }
 
+export type ConstraintName = keyof ConstraintSettings
+
+export interface ConstraintRow {
+  name: ConstraintName
+  enabled: boolean
+}
+
+/**
+ * Loads constraint settings from Supabase, falling back to defaults on error.
+ */
 export async function loadConstraintSettings(): Promise<ConstraintSettings> {
   try {
+    // Use Supabase generic to type the rows
     const { data, error } = await supabase
-      .from('constraint_settings')
-      .select('name, enabled');
-    if (error || !data) throw error;
-    const cfg: Record<string, boolean> = { ...defaultConfig };
-    for (const row of data) cfg[row.name] = row.enabled;
-    return cfg as ConstraintSettings;
+      .from<ConstraintRow>('constraint_settings')
+      .select('name, enabled')
+
+    if (error) throw error
+    if (!data) throw new Error('No data returned')
+
+    // Start from the default JSON configuration
+    const cfg: ConstraintSettings = { ...(defaultConfig as ConstraintSettings) }
+
+    // Merge in any overrides from the database
+    for (const row of data) {
+      if (row.name in cfg) {
+        cfg[row.name] = row.enabled
+      }
+    }
+
+    return cfg
   } catch {
-    return defaultConfig as ConstraintSettings;
+    // On any failure, return the defaults
+    return defaultConfig as ConstraintSettings
   }
 }
