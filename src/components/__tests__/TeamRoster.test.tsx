@@ -1,21 +1,23 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TeamRoster from '../TeamRoster';
+import { supabase } from '@/lib/supabase';
+
+jest.mock('@/lib/supabase');
 
 const mockTeams = [
-  { id: 1, name: 'Alpha', organization: 'Org', speakers: [], wins: 0, losses: 0, speakerPoints: 0 }
+  { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], wins: 0, losses: 0, speakerPoints: 0 },
 ];
 
-globalThis.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    headers: { get: () => 'application/json' },
-    json: () => Promise.resolve(mockTeams),
-    text: () => Promise.resolve(JSON.stringify(mockTeams))
-  })
-) as jest.Mock;
+const fromMock = jest.fn().mockReturnValue({
+  select: jest.fn().mockResolvedValue({ data: mockTeams, error: null }),
+  insert: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+});
+
+;(supabase as any).from = fromMock;
 
 const renderComponent = async () => {
   const client = new QueryClient();
@@ -29,10 +31,16 @@ const renderComponent = async () => {
 };
 
 describe('TeamRoster', () => {
-  it('displays teams from API', async () => {
+  it('renders teams from Supabase', async () => {
     await renderComponent();
+
+    // ensure supabase.from was called with the "teams" table
+    expect(fromMock).toHaveBeenCalledWith('teams');
+
+    // wait for the UI to display our single mock team
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Org')).toBeInTheDocument();
     });
   });
 });

@@ -26,6 +26,10 @@ const DashboardNav = ({ activeTournament }: DashboardNavProps) => {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user.email ?? null)
+    })
+    return () => subscription.unsubscribe()
   }, [])
   return (
     <nav className="bg-white border-b border-slate-200 px-4 py-3">
