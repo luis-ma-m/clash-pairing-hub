@@ -1,7 +1,8 @@
-// Support both browser and Node environments without relying on import.meta
-const browserBase = (globalThis as any).VITE_API_BASE_URL;
-const nodeBase = typeof process !== 'undefined' ? process.env.VITE_API_BASE_URL : undefined;
-export const apiBaseUrl = browserBase ?? nodeBase ?? '';
+// Determine the API base URL from environment variables
+// When bundled for the browser, the build process should replace this value
+// with the appropriate string literal. During tests or in Node, it falls back
+// to `process.env`.
+export const apiBaseUrl = process.env.VITE_API_BASE_URL ?? '';
 
 // Helper to prefix relative paths with the base URL
 export function apiFetch(input: string, init?: RequestInit) {
