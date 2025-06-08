@@ -1,9 +1,15 @@
 import express from 'express';
 import cors from 'cors';
+import db, { initDB } from './db.ts';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// initialize database without blocking startup
+initDB().catch((err) => {
+  console.error('Failed to initialize DB', err);
+});
 
 const teams = [
   {
@@ -39,12 +45,6 @@ const debates = [
   }
 ];
 
-const scores = {
-  A1: [
-    { speaker: 'Alice Johnson', team: 'Oxford A', position: 'PM', content: 78, style: 82, strategy: 80, total: 240 },
-    { speaker: 'Bob Smith', team: 'Oxford A', position: 'DPM', content: 75, style: 79, strategy: 77, total: 231 },
-  ]
-};
 
 // ─── Tournament Stats Endpoint ─────────────────────────────────────────────
 app.get('/api/tournament/stats', (req, res) => {
@@ -120,8 +120,17 @@ app.get('/api/debates', (req, res) => {
   res.json(debates);
 });
 
-app.get('/api/scores/:room', (req, res) => {
-  res.json(scores[req.params.room] || []);
+app.get('/api/scores/:room', async (req, res) => {
+  await db.read();
+  const roomScores = (db.data?.scores ?? []).filter((s: any) => s.room === req.params.room);
+  res.json(roomScores);
+});
+
+app.post('/api/scores', async (req, res) => {
+  await db.read();
+  db.data!.scores.push(req.body);
+  await db.write();
+  res.status(201).json(req.body);
 });
 
 const PORT = process.env.PORT || 3001;

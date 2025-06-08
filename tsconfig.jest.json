@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "esModuleInterop": true
+  }
+}
