@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  define: {
+    'process.env': {
+      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL
+    }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
