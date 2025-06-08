@@ -1,4 +1,4 @@
-
+/// <reference types="@testing-library/jest-dom" />
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PairingEngine from '../PairingEngine';
@@ -10,10 +10,12 @@ const mockResponse = {
   currentRound: 1
 };
 
-globalThis.fetch = jest.fn(() => Promise.resolve({
-  ok: true,
-  json: () => Promise.resolve(mockResponse)
-})) as jest.Mock;
+globalThis.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(mockResponse)
+  })
+) as jest.Mock;
 
 const renderComponent = () => {
   const client = new QueryClient();

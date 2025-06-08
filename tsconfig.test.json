@@ -1,9 +1,12 @@
 {
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
-    "module": "ES2020",
+    "module": "nodenext",
+    "target": "ES2022",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "types": ["@testing-library/jest-dom", "node"]
-  }
+    "esModuleInterop": true,
+    "types": ["jest", "@testing-library/jest-dom", "node"]
+  },
+  "include": ["src", "server"]
 }
