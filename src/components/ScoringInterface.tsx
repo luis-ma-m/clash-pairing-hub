@@ -40,7 +40,12 @@ const ScoringInterface = () => {
     return res.json();
   };
 
-  const { data: debates = [] } = useQuery<Debate[]>({ queryKey: ['debates'], queryFn: fetchDebates });
+  const { data: debates = [] } = useQuery<Debate[]>({
+    queryKey: ['debates'],
+    queryFn: fetchDebates,
+    // Poll periodically so judges get the latest available debates
+    refetchInterval: 5000
+  });
 
   const fetchSpeakerScores = async () => {
     if (!selectedDebate) return [];
@@ -52,7 +57,9 @@ const ScoringInterface = () => {
   const { data: speakerScores = [] } = useQuery<SpeakerScore[]>({
     queryKey: ['scores', selectedDebate],
     queryFn: fetchSpeakerScores,
-    enabled: !!selectedDebate
+    enabled: !!selectedDebate,
+    // Keep scores in sync while judges input data
+    refetchInterval: 5000
   });
 
   useEffect(() => {
