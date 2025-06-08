@@ -1,348 +1,283 @@
 // server/server.ts
 import express from 'express';
 import cors from 'cors';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── FS-based JSON “database” helper ───────────────────────────────────────
+// ─── Supabase Client ───────────────────────────────────────────────────────
 
-const DB_FILE = path.join(process.cwd(), 'server', 'db.json');
+const SUPABASE_URL = process.env.SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string;
 
-export interface Database {
-  teams: any[];
-  pairings: any[];
-  debates: any[];
-  scores: any[];
-  users: any[];
-  currentRound: number;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-const defaultData: Database = {
-  teams: [],
-  pairings: [],
-  debates: [],
-  scores: [],
-  users: [],
-  currentRound: 1,
-};
-
-async function readDb(): Promise<Database> {
-  try {
-    const text = await fs.readFile(DB_FILE, 'utf8');
-    return { ...defaultData, ...JSON.parse(text) };
-  } catch {
-    // If missing or corrupted, write a fresh default file
-    await fs.writeFile(DB_FILE, JSON.stringify(defaultData, null, 2));
-    return { ...defaultData };
-  }
-}
-
-async function writeDb(data: Database) {
-  await fs.writeFile(DB_FILE, JSON.stringify(data, null, 2));
-}
-
-// ─── Validation Schemas ────────────────────────────────────────────────────
-const teamSchema = z.object({
-  name: z.string(),
-  organization: z.string(),
-  speakers: z.array(z.string()).max(5),
-});
-const teamUpdateSchema = teamSchema.partial();
-
-const pairingSchema = z.object({
-  round: z.number(),
-  room: z.string(),
-  proposition: z.string(),
-  opposition: z.string(),
-  judge: z.string(),
-  status: z.string(),
-  propWins: z.boolean().nullable().optional(),
-});
-const pairingUpdateSchema = pairingSchema.partial();
-
-const debateSchema = z.object({
-  room: z.string(),
-  proposition: z.string(),
-  opposition: z.string(),
-  judge: z.string(),
-  status: z.string(),
-});
-const debateUpdateSchema = debateSchema.partial();
-
-const speakerScoreSchema = z.object({
-  speaker: z.string(),
-  team: z.string(),
-  position: z.string(),
-  content: z.number(),
-  style: z.number(),
-  strategy: z.number(),
-  total: z.number().optional(),
-});
-
-const scoreSchema = z.object({
-  room: z.string(),
-  scores: z.array(speakerScoreSchema).optional(),
-  teamScores: z
-    .object({
-      proposition: z.object({ points: z.number(), margin: z.number() }),
-      opposition: z.object({ points: z.number(), margin: z.number() }),
-    })
-    .optional(),
-});
-
-const userSchema = z.object({
-  name: z.string(),
-  email: z.string().email(),
-  role: z.string(),
-});
-const userUpdateSchema = userSchema.partial();
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
 app.get('/api/teams', async (_req, res) => {
-  const db = await readDb();
-  res.json(db.teams);
+  const { data, error } = await supabase.from('teams').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 app.get('/api/teams/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const team = db.teams.find(t => t.id === id);
-  if (!team) return res.status(404).json({ error: 'Not found' });
-  res.json(team);
+  const { data, error } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.post('/api/teams', async (req, res) => {
-  const result = teamSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
-  const team = { id: Date.now(), wins: 0, losses: 0, speakerPoints: 0, ...result.data };
-  db.teams.push(team);
-  await writeDb(db);
-  res.status(201).json(team);
+  const { data, error } = await supabase
+    .from('teams')
+    .insert(req.body)
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
 });
 
 app.put('/api/teams/:id', async (req, res) => {
-  const result = teamUpdateSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.teams.findIndex(t => t.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.teams[idx] = { ...db.teams[idx], ...result.data };
-  await writeDb(db);
-  res.json(db.teams[idx]);
+  const { data, error } = await supabase
+    .from('teams')
+    .update(req.body)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.delete('/api/teams/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.teams.findIndex(t => t.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const [removed] = db.teams.splice(idx, 1);
-  await writeDb(db);
-  res.json(removed);
+  const { data, error } = await supabase
+    .from('teams')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
 
 app.get('/api/pairings', async (_req, res) => {
-  const db = await readDb();
-  res.json({ pairings: db.pairings, currentRound: db.currentRound });
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: setting, error: sErr } = await supabase.from('settings').select('currentRound').single();
+  if (pErr || sErr) {
+    const msg = pErr?.message || sErr?.message;
+    return res.status(500).json({ error: msg });
+  }
+  res.json({ pairings: pairings || [], currentRound: setting?.currentRound ?? 1 });
 });
 
 app.get('/api/pairings/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const p = db.pairings.find(x => x.id === id);
-  if (!p) return res.status(404).json({ error: 'Not found' });
-  res.json(p);
+  const { data, error } = await supabase
+    .from('pairings')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.post('/api/pairings', async (req, res) => {
-  const result = pairingSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
-  const pairing = { id: Date.now(), ...result.data };
-  db.pairings.push(pairing);
-  await writeDb(db);
-  res.status(201).json(pairing);
+  const { data, error } = await supabase
+    .from('pairings')
+    .insert(req.body)
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
 });
 
 app.put('/api/pairings/:id', async (req, res) => {
-  const result = pairingUpdateSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.pairings.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.pairings[idx] = { ...db.pairings[idx], ...result.data };
-  await writeDb(db);
-  res.json(db.pairings[idx]);
+  const { data, error } = await supabase
+    .from('pairings')
+    .update(req.body)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.delete('/api/pairings/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.pairings.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const [removed] = db.pairings.splice(idx, 1);
-  await writeDb(db);
-  res.json(removed);
+  const { data, error } = await supabase
+    .from('pairings')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 // ─── Debates CRUD ──────────────────────────────────────────────────────────
 
 app.get('/api/debates', async (_req, res) => {
-  const db = await readDb();
-  res.json(db.debates);
+  const { data, error } = await supabase.from('debates').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 app.get('/api/debates/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const d = db.debates.find(x => x.id === id);
-  if (!d) return res.status(404).json({ error: 'Not found' });
-  res.json(d);
+  const { data, error } = await supabase
+    .from('debates')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.post('/api/debates', async (req, res) => {
-  const result = debateSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
-  const debate = { id: Date.now(), ...result.data };
-  db.debates.push(debate);
-  await writeDb(db);
-  res.status(201).json(debate);
+  const { data, error } = await supabase
+    .from('debates')
+    .insert(req.body)
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
 });
 
 app.put('/api/debates/:id', async (req, res) => {
-  const result = debateUpdateSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.debates.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.debates[idx] = { ...db.debates[idx], ...result.data };
-  await writeDb(db);
-  res.json(db.debates[idx]);
+  const { data, error } = await supabase
+    .from('debates')
+    .update(req.body)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.delete('/api/debates/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.debates.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const [removed] = db.debates.splice(idx, 1);
-  await writeDb(db);
-  res.json(removed);
+  const { data, error } = await supabase
+    .from('debates')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 // ─── Scores CRUD ───────────────────────────────────────────────────────────
 
 app.get('/api/scores/:room', async (req, res) => {
-  const db = await readDb();
-  res.json(db.scores.filter(s => s.room === req.params.room));
+  const { data, error } = await supabase
+    .from('scores')
+    .select('*')
+    .eq('room', req.params.room);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 app.post('/api/scores', async (req, res) => {
-  const result = scoreSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
-  const entry = { id: Date.now(), ...result.data };
-  db.scores.push(entry);
-  await writeDb(db);
-  res.status(201).json(entry);
+  const { data, error } = await supabase
+    .from('scores')
+    .insert(req.body)
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
 });
 
 // ─── Users CRUD ────────────────────────────────────────────────────────────
 
 app.get('/api/users', async (_req, res) => {
-  const db = await readDb();
-  res.json(db.users);
+  const { data, error } = await supabase.from('users').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 app.get('/api/users/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const u = db.users.find(x => x.id === id);
-  if (!u) return res.status(404).json({ error: 'Not found' });
-  res.json(u);
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.post('/api/users', async (req, res) => {
-  const result = userSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
-  const user = { id: Date.now(), ...result.data };
-  db.users.push(user);
-  await writeDb(db);
-  res.status(201).json(user);
+  const { data, error } = await supabase
+    .from('users')
+    .insert(req.body)
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
 });
 
 app.put('/api/users/:id', async (req, res) => {
-  const result = userUpdateSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.message });
-  }
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.users.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.users[idx] = { ...db.users[idx], ...result.data };
-  await writeDb(db);
-  res.json(db.users[idx]);
+  const { data, error } = await supabase
+    .from('users')
+    .update(req.body)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 app.delete('/api/users/:id', async (req, res) => {
-  const db = await readDb();
   const id = Number(req.params.id);
-  const idx = db.users.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const [removed] = db.users.splice(idx, 1);
-  await writeDb(db);
-  res.json(removed);
+  const { data, error } = await supabase
+    .from('users')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json(data);
 });
 
 // ─── Analytics Endpoints ───────────────────────────────────────────────────
 
 // 1) Standings
 app.get('/api/analytics/standings', async (_req, res) => {
-  const db = await readDb();
-  const map = new Map<string, { team: string; wins: number; losses: number; speakerPoints: number }>();
-  db.teams.forEach(t => map.set(t.name, { team: t.name, wins: 0, losses: 0, speakerPoints: 0 }));
+  const { data: teams, error: tErr } = await supabase.from('teams').select('*');
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: scores, error: sErr } = await supabase.from('scores').select('*');
+  if (tErr || pErr || sErr) {
+    const msg = tErr?.message || pErr?.message || sErr?.message;
+    return res.status(500).json({ error: msg });
+  }
 
-  db.pairings.forEach(p => {
+  const map = new Map<string, { team: string; wins: number; losses: number; speakerPoints: number }>();
+  teams.forEach(t => map.set(t.name, { team: t.name, wins: 0, losses: 0, speakerPoints: 0 }));
+  pairings.forEach(p => {
     if (p.status === 'completed') {
       const prop = map.get(p.proposition)!;
-      const opp  = map.get(p.opposition)!;
+      const opp = map.get(p.opposition)!;
       if (p.propWins) { prop.wins++; opp.losses++; }
-      else           { prop.losses++; opp.wins++; }
+      else             { prop.losses++; opp.wins++; }
     }
   });
-
-  db.scores.forEach(s => {
+  scores.forEach(s => {
     const e = map.get(s.team);
     if (e) e.speakerPoints += s.total || 0;
   });
@@ -357,10 +292,11 @@ app.get('/api/analytics/standings', async (_req, res) => {
 
 // 2) Speakers
 app.get('/api/analytics/speakers', async (_req, res) => {
-  const db = await readDb();
-  const map = new Map<string, { name: string; team: string; total: number; count: number }>();
+  const { data: scores, error } = await supabase.from('scores').select('*');
+  if (error) return res.status(500).json({ error: error.message });
 
-  db.scores.forEach(s => {
+  const map = new Map<string, { name: string; team: string; total: number; count: number }>();
+  scores.forEach(s => {
     if (!map.has(s.speaker)) map.set(s.speaker, { name: s.speaker, team: s.team, total: 0, count: 0 });
     const e = map.get(s.speaker)!;
     e.total += s.total || 0;
@@ -377,11 +313,13 @@ app.get('/api/analytics/speakers', async (_req, res) => {
 
 // 3) Performance
 app.get('/api/analytics/performance', async (_req, res) => {
-  const db = await readDb();
-  const rounds = new Map<number, { round: number; total: number; debates: number }>();
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: scores, error: sErr } = await supabase.from('scores').select('*');
+  if (pErr || sErr) { return res.status(500).json({ error: (pErr || sErr)!.message }); }
 
-  db.scores.forEach(s => {
-    const p = db.pairings.find(p => p.room === s.room);
+  const rounds = new Map<number, { round: number; total: number; debates: number }>();
+  scores.forEach(s => {
+    const p = pairings.find(p => p.room === s.room);
     const r = p ? p.round : 1;
     if (!rounds.has(r)) rounds.set(r, { round: r, total: 0, debates: 0 });
     const e = rounds.get(r)!;
@@ -398,15 +336,18 @@ app.get('/api/analytics/performance', async (_req, res) => {
 
 // 4) Results summary
 app.get('/api/analytics/results', async (_req, res) => {
-  const db = await readDb();
+  const { data: pairings, error } = await supabase.from('pairings').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+
   let propWins = 0, oppWins = 0, ties = 0;
-  db.pairings.forEach(p => {
+  pairings.forEach(p => {
     if (p.status === 'completed') {
-      if (p.propWins === true)  propWins++;
+      if (p.propWins === true) propWins++;
       else if (p.propWins === false) oppWins++;
-      else                         ties++;
+      else                        ties++;
     }
   });
+
   res.json({ propWins, oppWins, ties });
 });
 

@@ -7,12 +7,15 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   const [session, setSession] = useState<null | Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']>(null)
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data } = await supabase.auth.getSession()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess)
+      setLoading(false)
+    })
+    supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
-    }
-    fetchSession()
+    })
+    return () => { subscription.unsubscribe() }
   }, [])
 
   if (loading) return null
