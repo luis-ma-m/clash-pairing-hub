@@ -140,6 +140,7 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    ```bash
    npm install
    ```
+   Make sure to run this before executing `npm run lint`.
 
 3. **Start the development server:**
    ```bash
@@ -151,19 +152,12 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 
 ### Development Commands
 
-```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Run linting
-npm run lint
-```
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run linting *(assumes dependencies installed)* |
 
 ## 🎯 Success Criteria
 
