@@ -20,12 +20,20 @@ export interface Bracket {
   losers?: BracketRound[]
 }
 
+/**
+ * Represents the record fetched from Supabase.
+ * The `data` field always contains a full Bracket object.
+ */
 export interface BracketRecord {
   id: string
   type: 'single' | 'double'
   data: Bracket
 }
 
+/**
+ * Hook to fetch the current bracket from Supabase.
+ * Returns `bracket: BracketRecord | null`.
+ */
 export function useBracket() {
   const { data } = useQuery<BracketRecord | null>({
     queryKey: ['bracket'],
@@ -34,12 +42,14 @@ export function useBracket() {
         .from('brackets')
         .select('*')
         .single()
+
       if (error) {
-        // If no bracket record exists yet, return null
+        // If no bracket exists yet, Supabase returns PGRST116
         if (error.code === 'PGRST116') return null
         throw error
       }
-      return data as BracketRecord | null
+
+      return data as BracketRecord
     },
     // Poll every 5 seconds to pick up new results
     refetchInterval: 5000,

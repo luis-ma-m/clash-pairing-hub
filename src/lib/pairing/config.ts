@@ -20,7 +20,7 @@ export interface ConstraintRow {
  */
 export async function loadConstraintSettings(): Promise<ConstraintSettings> {
   try {
-    // Use Supabase generic to type the rows
+    // Query the database with typed rows
     const { data, error } = await supabase
       .from<ConstraintRow>('constraint_settings')
       .select('name, enabled')
