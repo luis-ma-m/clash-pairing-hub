@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
+import { apiFetch } from "@/lib/api";
 
 type Team = {
   id: number;
@@ -30,7 +31,7 @@ const TeamRoster = () => {
   const queryClient = useQueryClient();
 
   const fetchTeams = async () => {
-    const res = await fetch('http://localhost:3001/api/teams');
+    const res = await apiFetch('/api/teams');
     if (!res.ok) throw new Error('Failed fetching teams');
     return res.json();
   };
@@ -38,7 +39,7 @@ const TeamRoster = () => {
   const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
 
   const addTeam = async () => {
-    const res = await fetch('http://localhost:3001/api/teams', {
+    const res = await apiFetch('/api/teams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -58,10 +59,56 @@ const TeamRoster = () => {
     }
   });
 
+  const updateTeam = async (payload: { id: number; updates: Partial<Team> }) => {
+    const res = await fetch(`http://localhost:3001/api/teams/${payload.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload.updates)
+    });
+    if (!res.ok) throw new Error('Failed to update team');
+    return res.json();
+  };
+
+  const deleteTeam = async (id: number) => {
+    const res = await fetch(`http://localhost:3001/api/teams/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete team');
+    return res.json();
+  };
+
+  const { mutateAsync: editTeam } = useMutation({
+    mutationFn: updateTeam,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] })
+  });
+
+  const { mutateAsync: removeTeam } = useMutation({
+    mutationFn: deleteTeam,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] })
+  });
+
   const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     team.organization.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalTeams = teams.length;
+  const totalSpeakers = teams.reduce((acc, t) => acc + t.speakers.length, 0);
+  const averageTeamSize = totalTeams ? (totalSpeakers / totalTeams).toFixed(1) : '0';
+
+  let universities = 0;
+  let highSchools = 0;
+  let clubs = 0;
+  teams.forEach((t) => {
+    const org = t.organization.toLowerCase();
+    if (org.includes('university')) universities += 1;
+    else if (org.includes('school')) highSchools += 1;
+    else if (org.includes('club')) clubs += 1;
+  });
+
+  const confirmed = teams.length;
+  const pending = 0;
+  const waitlisted = 0;
 
   return (
     <div className="space-y-6">
@@ -168,10 +215,24 @@ const TeamRoster = () => {
                   <TableCell className="font-mono">{team.speakerPoints}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const name = prompt('Team name', team.name);
+                          if (name) await editTeam({ id: team.id, updates: { name } });
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={async () => {
+                          if (confirm('Delete team?')) await removeTeam(team.id);
+                        }}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -192,15 +253,15 @@ const TeamRoster = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Total Teams</span>
-                <span className="font-semibold">24</span>
+                <span className="font-semibold">{totalTeams}</span>
               </div>
               <div className="flex justify-between">
                 <span>Total Speakers</span>
-                <span className="font-semibold">67</span>
+                <span className="font-semibold">{totalSpeakers}</span>
               </div>
               <div className="flex justify-between">
                 <span>Average Team Size</span>
-                <span className="font-semibold">2.8</span>
+                <span className="font-semibold">{averageTeamSize}</span>
               </div>
             </div>
           </CardContent>
@@ -214,15 +275,15 @@ const TeamRoster = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Universities</span>
-                <span className="font-semibold">18</span>
+                <span className="font-semibold">{universities}</span>
               </div>
               <div className="flex justify-between">
                 <span>High Schools</span>
-                <span className="font-semibold">4</span>
+                <span className="font-semibold">{highSchools}</span>
               </div>
               <div className="flex justify-between">
                 <span>Clubs</span>
-                <span className="font-semibold">2</span>
+                <span className="font-semibold">{clubs}</span>
               </div>
             </div>
           </CardContent>
@@ -236,15 +297,15 @@ const TeamRoster = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Confirmed</span>
-                <span className="font-semibold text-green-600">22</span>
+                <span className="font-semibold text-green-600">{confirmed}</span>
               </div>
               <div className="flex justify-between">
                 <span>Pending</span>
-                <span className="font-semibold text-yellow-600">2</span>
+                <span className="font-semibold text-yellow-600">{pending}</span>
               </div>
               <div className="flex justify-between">
                 <span>Waitlisted</span>
-                <span className="font-semibold text-slate-600">0</span>
+                <span className="font-semibold text-slate-600">{waitlisted}</span>
               </div>
             </div>
           </CardContent>
