@@ -18,6 +18,9 @@
 - User role management interface (UI only)
 - Tournament dashboard layout
 - Basic API endpoints
+- Backend database integration via Supabase
+- Authentication system with role-based access
+- API layer refactoring with real queries
 
 ### 🚧 In Progress
 - Initial tournament management
