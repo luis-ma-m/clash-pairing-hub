@@ -218,6 +218,9 @@ Then execute all unit tests:
 npm test --silent
 ```
 
+This command runs both frontend and backend tests, including the Swiss pairing
+and bracket generation checks located under `server/__tests__`.
+
 ## 🎯 Success Criteria
 
 The platform aims to enable tournament administrators to:
