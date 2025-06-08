@@ -34,10 +34,10 @@ describe('TeamRoster', () => {
   it('renders teams from Supabase', async () => {
     await renderComponent();
 
-    // ensure supabase.from was called with the "teams" table
+    // ensure supabase.from was called for the "teams" table
     expect(fromMock).toHaveBeenCalledWith('teams');
 
-    // wait for the UI to display our single mock team
+    // wait until our mock team appears in the UI
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument();
       expect(screen.getByText('Org')).toBeInTheDocument();
