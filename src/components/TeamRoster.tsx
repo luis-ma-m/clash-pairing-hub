@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
 import { apiFetch } from "@/lib/api";
+import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv";
 
 type Team = {
   id: number;
@@ -24,9 +25,24 @@ const TeamRoster = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [teamName, setTeamName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [speaker1, setSpeaker1] = useState('');
-  const [speaker2, setSpeaker2] = useState('');
-  const [speaker3, setSpeaker3] = useState('');
+  const [speakers, setSpeakers] = useState<string[]>(['', '']);
+  const [open, setOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addSpeakerField = () => {
+    if (speakers.length >= 5) return;
+    setSpeakers([...speakers, '']);
+  };
+
+  const removeSpeakerField = (index: number) => {
+    setSpeakers(speakers.filter((_, i) => i !== index));
+  };
+
+  const updateSpeaker = (index: number, value: string) => {
+    const updated = [...speakers];
+    updated[index] = value;
+    setSpeakers(updated);
+  };
 
   const queryClient = useQueryClient();
 
@@ -39,13 +55,17 @@ const TeamRoster = () => {
   const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
 
   const addTeam = async () => {
+    const validSpeakers = speakers.filter(Boolean);
+    if (validSpeakers.length > 5) {
+      throw new Error('Cannot add more than 5 speakers');
+    }
     const res = await apiFetch('/api/teams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: teamName,
         organization,
-        speakers: [speaker1, speaker2, speaker3].filter(Boolean)
+        speakers: validSpeakers
       })
     });
     if (!res.ok) throw new Error('Failed to add team');
@@ -60,7 +80,7 @@ const TeamRoster = () => {
   });
 
   const updateTeam = async (payload: { id: number; updates: Partial<Team> }) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${payload.id}`, {
+    const res = await apiFetch(`/api/teams/${payload.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload.updates)
@@ -70,7 +90,7 @@ const TeamRoster = () => {
   };
 
   const deleteTeam = async (id: number) => {
-    const res = await fetch(`http://localhost:3001/api/teams/${id}`, {
+    const res = await apiFetch(`/api/teams/${id}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Failed to delete team');
@@ -86,6 +106,38 @@ const TeamRoster = () => {
     mutationFn: deleteTeam,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] })
   });
+
+  const handleExport = () => {
+    const data: TeamCsv[] = teams.map(t => ({
+      name: t.name,
+      organization: t.organization,
+      speakers: t.speakers,
+    }));
+    const csv = teamsToCsv(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'teams.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseTeamsCsv(text);
+    for (const team of parsed) {
+      await apiFetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(team),
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,17 +170,32 @@ const TeamRoster = () => {
           <p className="text-slate-600">Manage teams, speakers, and registrations</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
             <Upload className="h-4 w-4" />
             Import CSV
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" onClick={() => setOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Add Team
               </Button>
@@ -143,18 +210,42 @@ const TeamRoster = () => {
               <div className="space-y-4">
                 <Input placeholder="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
                 <Input placeholder="Organization" value={organization} onChange={(e) => setOrganization(e.target.value)} />
-                <Input placeholder="Speaker 1 Name" value={speaker1} onChange={(e) => setSpeaker1(e.target.value)} />
-                <Input placeholder="Speaker 2 Name" value={speaker2} onChange={(e) => setSpeaker2(e.target.value)} />
-                <Input placeholder="Speaker 3 Name (optional)" value={speaker3} onChange={(e) => setSpeaker3(e.target.value)} />
+                {speakers.map((spk, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder={`Speaker ${index + 1} Name${index < 2 ? '' : ' (optional)'}`}
+                      value={spk}
+                      onChange={(e) => updateSpeaker(index, e.target.value)}
+                    />
+                    {speakers.length > 2 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => removeSpeakerField(index)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {speakers.length < 5 && (
+                  <Button type="button" variant="outline" onClick={addSpeakerField}>
+                    Add Speaker
+                  </Button>
+                )}
                 <Button
                   className="w-full"
                   onClick={async () => {
+                    if (speakers.filter(Boolean).length > 5) {
+                      alert('Cannot add more than 5 speakers');
+                      return;
+                    }
                     await createTeam();
                     setTeamName('');
                     setOrganization('');
-                    setSpeaker1('');
-                    setSpeaker2('');
-                    setSpeaker3('');
+                    setSpeakers(['', '']);
+                    setOpen(false);
                   }}
                 >
                   Create Team

@@ -36,17 +36,17 @@ const PairingEngine: React.FC = () => {
     queryFn: fetchPairings
   });
 
-  const pairings = data?.pairings ?? [];
+  const pairings     = data?.pairings     ?? [];
   const currentRound = data?.currentRound ?? 0;
-
-  // …rest of your component (render controls, table, charts, etc.)…
 
   return (
     <div>
       <h2>Round {currentRound}</h2>
       <select
         value={pairingAlgorithm}
-        onChange={e => setPairingAlgorithm(e.target.value as any)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+          setPairingAlgorithm(e.target.value as 'swiss' | 'power' | 'random')
+        }
       >
         <option value="swiss">Swiss</option>
         <option value="power">Power</option>
