@@ -82,6 +82,14 @@ const userSchema = z.object({
   role: z.string(),
 })
 
+const tournamentSchema = z.object({
+  name: z.string(),
+  format: z.string(),
+  status: z.string().optional(),
+  settings: z.any().optional(),
+  owner_id: z.string().uuid().optional(),
+})
+
 // ─── Bracket Generation Schema ─────────────────────────────────────────────
 
 const bracketSchema = z.object({
@@ -103,6 +111,67 @@ const checkSupabaseConfig = (
   }
   next()
 }
+
+// ─── Tournaments CRUD ───────────────────────────────────────────────────────
+
+app.get('/api/tournaments', checkSupabaseConfig, async (_req, res) => {
+  const { data, error } = await supabase.from('tournaments').select('*')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.get('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/tournaments', async (req, res) => {
+  const parsed = tournamentSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('tournaments')
+    .insert(parsed.data)
+    .select()
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.status(201).json(data)
+})
+
+app.put('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const parsed = tournamentSchema.partial().safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+  const { data, error } = await supabase
+    .from('tournaments')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
+
+app.delete('/api/tournaments/:id', async (req, res) => {
+  const { id } = req.params
+  const { data, error } = await supabase
+    .from('tournaments')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return res.status(404).json({ error: error.message })
+  res.json(data)
+})
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 

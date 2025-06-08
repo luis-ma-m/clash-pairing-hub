@@ -13,7 +13,7 @@ export async function loadConstraintSettings(): Promise<ConstraintSettings> {
       .from('constraint_settings')
       .select('name, enabled');
     if (error || !data) throw error;
-    const cfg: any = { ...defaultConfig };
+    const cfg: Record<string, boolean> = { ...defaultConfig };
     for (const row of data) cfg[row.name] = row.enabled;
     return cfg as ConstraintSettings;
   } catch {

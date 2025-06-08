@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 
-export interface BracketRecord {
+export interface BracketRecord<T = unknown> {
   id: string;
   type: 'single' | 'double';
-  data: any;
+  data: T;
 }
 
 export function useBracket() {

@@ -10,10 +10,10 @@ const BracketView: React.FC = () => {
 
   return (
     <div className="flex gap-4 overflow-x-auto">
-      {rounds.map((round: any) => (
+      {rounds.map((round: { round: number; matches: { id: string; team1?: string; team2?: string }[] }) => (
         <div key={round.round} className="min-w-[150px]">
           <h3 className="font-semibold mb-2 text-center">Round {round.round}</h3>
-          {round.matches.map((m: any) => (
+          {round.matches.map((m: { id: string; team1?: string; team2?: string }) => (
             <div key={m.id} className="border rounded p-2 mb-2 text-sm text-center">
               <div>{m.team1 || 'TBD'}</div>
               <div className="text-xs text-gray-500">vs</div>
