@@ -1,54 +1,56 @@
+// src/components/TeamRoster.test.tsx
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor, act } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import TeamRoster from "../TeamRoster";
-import { supabase } from "@/lib/supabase";
+import React from 'react'
+import { render, screen, waitFor, act } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import TeamRoster from '../TeamRoster'
+import { supabase } from '@/lib/supabase'
 
-// Avoid importing the real Supabase client which is ESM only. Provide a
-// lightweight mock that exposes a `from` method which tests can configure.
-jest.mock("@/lib/supabase", () => ({
+jest.mock('@/lib/supabase', () => ({
   supabase: { from: jest.fn() },
   __esModule: true,
-}));
+}))
 
 const mockTeams = [
-  { id: 1, name: "Alpha", organization: "Org", speakers: ["A1"], wins: 0, losses: 0, speakerPoints: 0 },
-];
+  { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], wins: 0, losses: 0, speakerPoints: 0 },
+]
 
 const fromMock = jest.fn().mockReturnValue({
   select: jest.fn().mockResolvedValue({ data: mockTeams, error: null }),
   insert: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
-});
+})
 
-interface MockSupabase {
-  from: jest.Mock;
+interface SupabaseLike {
+  from: typeof fromMock
 }
-(supabase as unknown as MockSupabase).from = fromMock;
+// Redirect supabase.from to our mock
+;(supabase as unknown as SupabaseLike).from = fromMock
 
+// Helper to render the component within QueryClientProvider
 const renderComponent = async () => {
-  const client = new QueryClient();
+  const client = new QueryClient()
   await act(async () => {
     render(
       <QueryClientProvider client={client}>
         <TeamRoster />
       </QueryClientProvider>
-    );
-  });
-};
+    )
+  })
+}
 
-describe("TeamRoster", () => {
-  it("renders teams from Supabase", async () => {
-    await renderComponent();
+describe('TeamRoster', () => {
+  it('queries the teams table and renders fetched teams', async () => {
+    await renderComponent()
 
-    // verify we queried the "teams" table
-    expect(fromMock).toHaveBeenCalledWith("teams");
+    // Ensure we called supabase.from('teams')
+    expect(fromMock).toHaveBeenCalledWith('teams')
 
-    // wait for our mock to show up
+    // Wait for mock data to appear in the DOM
     await waitFor(() => {
-      expect(screen.getByText("Alpha")).toBeInTheDocument();
-      expect(screen.getByText("Org")).toBeInTheDocument();
-    });
-  });
-});
+      expect(screen.getByText('Alpha')).toBeInTheDocument()
+      expect(screen.getByText('Org')).toBeInTheDocument()
+    })
+  })
+})

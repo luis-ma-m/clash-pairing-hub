@@ -1,26 +1,59 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../supabase';
-import type { Bracket } from '../types/bracket';
+// src/lib/hooks/useBracket.ts
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../supabase'
 
-export interface BracketRecord {
-  id: string;
-  type: 'single' | 'double';
-  data: Bracket;
+export interface BracketMatch {
+  id: string
+  team1: string | null
+  team2: string | null
+  winner?: string | null
 }
 
+export interface BracketRound {
+  round: number
+  matches: BracketMatch[]
+}
+
+export interface Bracket {
+  type: 'single' | 'double'
+  rounds: BracketRound[]
+  losers?: BracketRound[]
+}
+
+/**
+ * Represents the record fetched from Supabase.
+ * The `data` field always contains a full Bracket object.
+ */
+export interface BracketRecord {
+  id: string
+  type: 'single' | 'double'
+  data: Bracket
+}
+
+/**
+ * Hook to fetch the current bracket from Supabase.
+ * Returns `bracket: BracketRecord | null`.
+ */
 export function useBracket() {
   const { data } = useQuery<BracketRecord | null>({
     queryKey: ['bracket'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('brackets').select('*').single();
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-      return data as BracketRecord | null;
-    },
-    refetchInterval: 5000,
-  });
+      const { data, error } = await supabase
+        .from('brackets')
+        .select('*')
+        .single()
 
-  return { bracket: data };
+      if (error) {
+        // If no bracket exists yet, Supabase returns PGRST116
+        if (error.code === 'PGRST116') return null
+        throw error
+      }
+
+      return data as BracketRecord
+    },
+    // Poll every 5 seconds to pick up new results
+    refetchInterval: 5000,
+  })
+
+  return { bracket: data }
 }
