@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node --loader ts-node/esm server/server.ts",
-    "test": "bun x jest --config jest.config.cjs"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

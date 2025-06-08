@@ -1,0 +1,17 @@
+{
+  "teams": [
+    { "id": 1, "name": "Alpha", "organization": "Org", "speakers": ["A", "B"] }
+  ],
+  "pairings": [
+    { "id": 1, "round": 1, "room": "A1", "proposition": "Alpha", "opposition": "Beta", "status": "pending", "propWins": null }
+  ],
+  "scores": [
+    { "id": 1, "room": "A1", "team": "Alpha", "speaker": "A", "total": 75 }
+  ],
+  "settings": [
+    { "id": 1, "currentRound": 1 }
+  ],
+  "users": [
+    { "id": 1, "name": "Admin", "email": "admin@example.com", "role": "Judge" }
+  ]
+}
