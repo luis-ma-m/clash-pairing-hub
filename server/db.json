@@ -1,0 +1,29 @@
+{
+  "teams": [
+    {
+      "id": 1,
+      "name": "Oxford A",
+      "organization": "Oxford University",
+      "speakers": [
+        "Alice Johnson",
+        "Bob Smith"
+      ],
+      "wins": 0,
+      "losses": 0,
+      "speakerPoints": 0
+    }
+  ],
+  "pairings": [
+    {
+      "id": 1,
+      "round": 1,
+      "room": "A1",
+      "proposition": "Oxford A",
+      "opposition": "Cambridge B",
+      "judge": "Dr. Sarah Wilson",
+      "status": "completed",
+      "propWins": true
+    }
+  ],
+  "currentRound": 2
+}
