@@ -230,13 +230,13 @@ The platform aims to enable tournament administrators to:
 
 ## 🔮 Future Roadmap
 
-### Phase 1: Core Backend (Current Priority)
+### Phase 1: Core Backend
 - Database schema implementation
 - Authentication system
 - Basic API endpoints
 - Data validation and security
 
-### Phase 2: Pairing Algorithms
+### Phase 2: Pairing Algorithms (Current Priority)
 - Swiss system implementation
 - Elimination bracket generation
 - Constraint satisfaction solver
