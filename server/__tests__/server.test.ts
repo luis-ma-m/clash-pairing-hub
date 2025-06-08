@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import request from 'supertest';
 
-let app: any;
+let app: import('express').Express;
 
 beforeAll(async () => {
   const mod = await import('../server.ts');
