@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { z } from 'zod';
 
 const app = express();
 app.use(cors());
@@ -45,6 +46,62 @@ async function writeDb(data: Database) {
   await fs.writeFile(DB_FILE, JSON.stringify(data, null, 2));
 }
 
+// ─── Validation Schemas ────────────────────────────────────────────────────
+const teamSchema = z.object({
+  name: z.string(),
+  organization: z.string(),
+  speakers: z.array(z.string()).max(5),
+});
+const teamUpdateSchema = teamSchema.partial();
+
+const pairingSchema = z.object({
+  round: z.number(),
+  room: z.string(),
+  proposition: z.string(),
+  opposition: z.string(),
+  judge: z.string(),
+  status: z.string(),
+  propWins: z.boolean().nullable().optional(),
+});
+const pairingUpdateSchema = pairingSchema.partial();
+
+const debateSchema = z.object({
+  room: z.string(),
+  proposition: z.string(),
+  opposition: z.string(),
+  judge: z.string(),
+  status: z.string(),
+});
+const debateUpdateSchema = debateSchema.partial();
+
+const speakerScoreSchema = z.object({
+  speaker: z.string(),
+  team: z.string(),
+  position: z.string(),
+  content: z.number(),
+  style: z.number(),
+  strategy: z.number(),
+  total: z.number().optional(),
+});
+
+const scoreSchema = z.object({
+  room: z.string(),
+  scores: z.array(speakerScoreSchema).optional(),
+  teamScores: z
+    .object({
+      proposition: z.object({ points: z.number(), margin: z.number() }),
+      opposition: z.object({ points: z.number(), margin: z.number() }),
+    })
+    .optional(),
+});
+
+const userSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  role: z.string(),
+});
+const userUpdateSchema = userSchema.partial();
+
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
 app.get('/api/teams', async (_req, res) => {
@@ -61,19 +118,27 @@ app.get('/api/teams/:id', async (req, res) => {
 });
 
 app.post('/api/teams', async (req, res) => {
+  const result = teamSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
-  const team = { id: Date.now(), wins: 0, losses: 0, speakerPoints: 0, ...req.body };
+  const team = { id: Date.now(), wins: 0, losses: 0, speakerPoints: 0, ...result.data };
   db.teams.push(team);
   await writeDb(db);
   res.status(201).json(team);
 });
 
 app.put('/api/teams/:id', async (req, res) => {
+  const result = teamUpdateSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
   const id = Number(req.params.id);
   const idx = db.teams.findIndex(t => t.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.teams[idx] = { ...db.teams[idx], ...req.body };
+  db.teams[idx] = { ...db.teams[idx], ...result.data };
   await writeDb(db);
   res.json(db.teams[idx]);
 });
@@ -104,19 +169,27 @@ app.get('/api/pairings/:id', async (req, res) => {
 });
 
 app.post('/api/pairings', async (req, res) => {
+  const result = pairingSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
-  const pairing = { id: Date.now(), ...req.body };
+  const pairing = { id: Date.now(), ...result.data };
   db.pairings.push(pairing);
   await writeDb(db);
   res.status(201).json(pairing);
 });
 
 app.put('/api/pairings/:id', async (req, res) => {
+  const result = pairingUpdateSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
   const id = Number(req.params.id);
   const idx = db.pairings.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.pairings[idx] = { ...db.pairings[idx], ...req.body };
+  db.pairings[idx] = { ...db.pairings[idx], ...result.data };
   await writeDb(db);
   res.json(db.pairings[idx]);
 });
@@ -147,19 +220,27 @@ app.get('/api/debates/:id', async (req, res) => {
 });
 
 app.post('/api/debates', async (req, res) => {
+  const result = debateSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
-  const debate = { id: Date.now(), ...req.body };
+  const debate = { id: Date.now(), ...result.data };
   db.debates.push(debate);
   await writeDb(db);
   res.status(201).json(debate);
 });
 
 app.put('/api/debates/:id', async (req, res) => {
+  const result = debateUpdateSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
   const id = Number(req.params.id);
   const idx = db.debates.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.debates[idx] = { ...db.debates[idx], ...req.body };
+  db.debates[idx] = { ...db.debates[idx], ...result.data };
   await writeDb(db);
   res.json(db.debates[idx]);
 });
@@ -182,8 +263,12 @@ app.get('/api/scores/:room', async (req, res) => {
 });
 
 app.post('/api/scores', async (req, res) => {
+  const result = scoreSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
-  const entry = { id: Date.now(), ...req.body };
+  const entry = { id: Date.now(), ...result.data };
   db.scores.push(entry);
   await writeDb(db);
   res.status(201).json(entry);
@@ -205,19 +290,27 @@ app.get('/api/users/:id', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
+  const result = userSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
-  const user = { id: Date.now(), ...req.body };
+  const user = { id: Date.now(), ...result.data };
   db.users.push(user);
   await writeDb(db);
   res.status(201).json(user);
 });
 
 app.put('/api/users/:id', async (req, res) => {
+  const result = userUpdateSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+  }
   const db = await readDb();
   const id = Number(req.params.id);
   const idx = db.users.findIndex(x => x.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  db.users[idx] = { ...db.users[idx], ...req.body };
+  db.users[idx] = { ...db.users[idx], ...result.data };
   await writeDb(db);
   res.json(db.users[idx]);
 });
