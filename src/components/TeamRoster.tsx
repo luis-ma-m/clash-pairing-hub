@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
+import { apiFetch } from "@/lib/api";
 
 type Team = {
   id: number;
@@ -30,7 +31,7 @@ const TeamRoster = () => {
   const queryClient = useQueryClient();
 
   const fetchTeams = async () => {
-    const res = await fetch('http://localhost:3001/api/teams');
+    const res = await apiFetch('/api/teams');
     if (!res.ok) throw new Error('Failed fetching teams');
     return res.json();
   };
@@ -38,7 +39,7 @@ const TeamRoster = () => {
   const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
 
   const addTeam = async () => {
-    const res = await fetch('http://localhost:3001/api/teams', {
+    const res = await apiFetch('/api/teams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

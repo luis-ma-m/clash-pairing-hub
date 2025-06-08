@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shuffle, Play, Clock, MapPin, CheckCircle } from 'lucide-react';
+import { apiFetch } from "@/lib/api";
 
 type Pairing = {
   id: number;
@@ -23,7 +24,7 @@ const PairingEngine = () => {
   const [currentRound, setCurrentRound] = useState(3);
   
   const fetchPairings = async () => {
-    const res = await fetch('http://localhost:3001/api/pairings');
+    const res = await apiFetch('/api/pairings');
     if (!res.ok) throw new Error('Failed fetching pairings');
     return res.json();
   };
@@ -44,7 +45,7 @@ const PairingEngine = () => {
   };
 
   const generatePairings = async () => {
-    await fetch('http://localhost:3001/api/pairings/generate', {
+    await apiFetch('/api/pairings/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ algorithm: pairingAlgorithm, round: currentRound })

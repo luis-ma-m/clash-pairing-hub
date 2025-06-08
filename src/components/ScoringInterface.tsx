@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, Trophy, User, Clock } from 'lucide-react';
+import { apiFetch } from "@/lib/api";
 
 type Debate = {
   room: string;
@@ -32,7 +33,7 @@ const ScoringInterface = () => {
   const [selectedDebate, setSelectedDebate] = useState('');
 
   const fetchDebates = async () => {
-    const res = await fetch('http://localhost:3001/api/debates');
+    const res = await apiFetch('/api/debates');
     if (!res.ok) throw new Error('Failed fetching debates');
     return res.json();
   };
@@ -41,7 +42,7 @@ const ScoringInterface = () => {
 
   const fetchSpeakerScores = async () => {
     if (!selectedDebate) return [];
-    const res = await fetch(`http://localhost:3001/api/scores/${selectedDebate}`);
+    const res = await apiFetch(`/api/scores/${selectedDebate}`);
     if (!res.ok) throw new Error('Failed fetching scores');
     return res.json();
   };
