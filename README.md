@@ -170,6 +170,16 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 3. Paste those values into the corresponding variables in your `.env` file as shown above.
 4. Ensure these variables are available when starting the API server or the frontend. The backend will exit with an error if `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing.
 
+### Creating the Admin User
+
+After configuring `.env`, you can create the default admin account by running:
+
+```bash
+npm run create-admin
+```
+
+This script uses the credentials described in [docs/credentials.md](docs/credentials.md). Provide `SUPABASE_SERVICE_ROLE_KEY` if possible; otherwise it will fall back to the anon key.
+
 3. **Start the development server:**
    ```bash
    npm run dev
