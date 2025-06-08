@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Clock, Users, Trophy, Play, Pause } from 'lucide-react';
+import { Users, Trophy, Play, Pause, TrendingUp, Target } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -20,11 +21,45 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
   const totalRounds = activeTournament.rounds;
   const progress = (currentRound / totalRounds) * 100;
 
+  const fetchStandings = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/standings');
+    if (!res.ok) throw new Error('Failed fetching standings');
+    return res.json();
+  };
+
+  const fetchPerformance = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/performance');
+    if (!res.ok) throw new Error('Failed fetching performance');
+    return res.json();
+  };
+
+  const { data: teamStandings = [] } = useQuery({
+    queryKey: ['tm-standings'],
+    queryFn: fetchStandings,
+    refetchInterval: 5000
+  });
+
+  const { data: performanceData = [] } = useQuery({
+    queryKey: ['tm-performance'],
+    queryFn: fetchPerformance,
+    refetchInterval: 5000
+  });
+
+  const totalDebates = performanceData.reduce((acc, r) => acc + (r.debates || 0), 0);
+  const avgSpeakerScore = (() => {
+    if (!totalDebates) return 0;
+    const sum = performanceData.reduce((acc, r) => acc + r.avgScore * r.debates, 0);
+    return (sum / totalDebates).toFixed(1);
+  })();
+
+  const currentLeader = teamStandings[0]?.team || '-';
+  const leaderPoints = teamStandings[0]?.points ?? 0;
+
   const quickStats = [
-    { label: 'Teams Registered', value: activeTournament.teams, icon: Users },
-    { label: 'Current Round', value: `${currentRound}/${totalRounds}`, icon: Trophy },
-    { label: 'Active Debates', value: '12', icon: Play },
-    { label: 'Completed Debates', value: '24', icon: Clock }
+    { label: 'Total Debates', value: totalDebates, icon: Target },
+    { label: 'Avg Speaker Score', value: avgSpeakerScore, icon: TrendingUp },
+    { label: 'Active Teams', value: teamStandings.length, icon: Users },
+    { label: 'Current Leader', value: `${currentLeader} (${leaderPoints})`, icon: Trophy }
   ];
 
   return (

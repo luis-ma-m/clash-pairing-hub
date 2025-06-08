@@ -4,35 +4,61 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Trophy, TrendingUp, Users, Target } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 const LiveAnalytics = () => {
-  const teamStandings = [
-    { rank: 1, team: 'Cambridge A', wins: 3, losses: 0, speakerPoints: 267.2, points: 9 },
-    { rank: 2, team: 'Oxford A', wins: 2, losses: 1, speakerPoints: 245.5, points: 6 },
-    { rank: 3, team: 'Edinburgh A', wins: 2, losses: 1, speakerPoints: 239.8, points: 6 },
-    { rank: 4, team: 'LSE Debaters', wins: 1, losses: 2, speakerPoints: 198.7, points: 3 },
-    { rank: 5, team: 'KCL Speakers', wins: 1, losses: 2, speakerPoints: 195.4, points: 3 }
-  ];
+  const fetchStandings = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/standings');
+    if (!res.ok) throw new Error('Failed fetching standings');
+    return res.json();
+  };
 
-  const speakerRankings = [
-    { rank: 1, name: 'Alice Johnson', team: 'Oxford A', average: 82.5, total: 247.5 },
-    { rank: 2, name: 'David Brown', team: 'Cambridge A', average: 81.8, total: 245.4 },
-    { rank: 3, name: 'Emma Wilson', team: 'Cambridge A', average: 80.2, total: 240.6 },
-    { rank: 4, name: 'Frank Miller', team: 'LSE Debaters', average: 79.1, total: 237.3 },
-    { rank: 5, name: 'Grace Lee', team: 'Edinburgh A', average: 78.9, total: 236.7 }
-  ];
+  const fetchSpeakers = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/speakers');
+    if (!res.ok) throw new Error('Failed fetching speakers');
+    return res.json();
+  };
 
-  const performanceData = [
-    { round: 'R1', avgScore: 235.4, debates: 12 },
-    { round: 'R2', avgScore: 238.2, debates: 12 },
-    { round: 'R3', avgScore: 241.1, debates: 12 },
-    { round: 'R4', avgScore: 239.8, debates: 8 }
-  ];
+  const fetchPerformance = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/performance');
+    if (!res.ok) throw new Error('Failed fetching performance');
+    return res.json();
+  };
+
+  const fetchResults = async () => {
+    const res = await fetch('http://localhost:3001/api/analytics/results');
+    if (!res.ok) throw new Error('Failed fetching results');
+    return res.json();
+  };
+
+  const { data: teamStandings = [] } = useQuery({
+    queryKey: ['team-standings'],
+    queryFn: fetchStandings,
+    refetchInterval: 5000
+  });
+
+  const { data: speakerRankings = [] } = useQuery({
+    queryKey: ['speaker-rankings'],
+    queryFn: fetchSpeakers,
+    refetchInterval: 5000
+  });
+
+  const { data: performanceData = [] } = useQuery({
+    queryKey: ['performance-data'],
+    queryFn: fetchPerformance,
+    refetchInterval: 5000
+  });
+
+  const { data: resultDistributionRaw = { propWins: 0, oppWins: 0, ties: 0 } } = useQuery({
+    queryKey: ['result-distribution'],
+    queryFn: fetchResults,
+    refetchInterval: 5000
+  });
 
   const resultDistribution = [
-    { name: 'Proposition Wins', value: 18, color: '#3b82f6' },
-    { name: 'Opposition Wins', value: 14, color: '#ef4444' },
-    { name: 'Ties', value: 2, color: '#6b7280' }
+    { name: 'Proposition Wins', value: resultDistributionRaw.propWins, color: '#3b82f6' },
+    { name: 'Opposition Wins', value: resultDistributionRaw.oppWins, color: '#ef4444' },
+    { name: 'Ties', value: resultDistributionRaw.ties, color: '#6b7280' }
   ];
 
   return (
@@ -54,8 +80,9 @@ const LiveAnalytics = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">34</div>
-            <p className="text-xs text-muted-foreground">+8 from last round</p>
+            <div className="text-2xl font-bold">
+              {performanceData.reduce((acc, r) => acc + (r.debates || 0), 0)}
+            </div>
           </CardContent>
         </Card>
 
@@ -65,8 +92,14 @@ const LiveAnalytics = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">238.7</div>
-            <p className="text-xs text-muted-foreground">+2.3 from R3</p>
+            <div className="text-2xl font-bold">
+              {(() => {
+                const totalDebates = performanceData.reduce((acc, r) => acc + (r.debates || 0), 0);
+                if (!totalDebates) return 0;
+                const sum = performanceData.reduce((acc, r) => acc + r.avgScore * r.debates, 0);
+                return (sum / totalDebates).toFixed(1);
+              })()}
+            </div>
           </CardContent>
         </Card>
 
@@ -76,8 +109,7 @@ const LiveAnalytics = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">All participating</p>
+            <div className="text-2xl font-bold">{teamStandings.length}</div>
           </CardContent>
         </Card>
 
@@ -87,8 +119,12 @@ const LiveAnalytics = () => {
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Cambridge A</div>
-            <p className="text-xs text-muted-foreground">9 points, undefeated</p>
+            <div className="text-2xl font-bold">
+              {teamStandings[0]?.team || '-'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {teamStandings[0] ? `${teamStandings[0].points} points` : ''}
+            </p>
           </CardContent>
         </Card>
       </div>
