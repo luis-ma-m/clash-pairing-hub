@@ -1,6 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TeamRoster from '../TeamRoster';
 import { supabase } from '@/lib/supabase';
@@ -18,22 +17,30 @@ const fromMock = jest.fn().mockReturnValue({
   delete: jest.fn(),
 });
 
-(supabase as any).from = fromMock;
+;(supabase as any).from = fromMock;
 
-const renderComponent = async () =>
+const renderComponent = async () => {
+  const client = new QueryClient();
   await act(async () => {
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider client={client}>
         <TeamRoster />
       </QueryClientProvider>
     );
   });
+};
 
 describe('TeamRoster', () => {
   it('renders teams from Supabase', async () => {
     await renderComponent();
+
+    // ensure supabase.from was called for the "teams" table
+    expect(fromMock).toHaveBeenCalledWith('teams');
+
+    // wait until our mock team appears in the UI
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Org')).toBeInTheDocument();
     });
   });
 });
