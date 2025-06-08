@@ -9,7 +9,7 @@ export default {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.test.json',
+      tsconfig: '<rootDir>/tsconfig.test.json',
       useESM: true
     }
   }

@@ -46,7 +46,9 @@ const PairingEngine: React.FC = () => {
       <h2>Round {currentRound}</h2>
       <select
         value={pairingAlgorithm}
-        onChange={e => setPairingAlgorithm(e.target.value as any)}
+        onChange={e =>
+          setPairingAlgorithm(e.target.value as 'swiss' | 'power' | 'random')
+        }
       >
         <option value="swiss">Swiss</option>
         <option value="power">Power</option>
