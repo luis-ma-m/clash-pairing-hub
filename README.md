@@ -169,6 +169,7 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
 3. Paste those values into the corresponding variables in your `.env` file as shown above.
 4. Ensure these variables are available when starting the API server or the frontend. The backend will exit with an error if `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing.
+5. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
 
 3. **Start the development server:**
    ```bash
