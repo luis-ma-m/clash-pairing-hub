@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Shuffle, Play, Clock, MapPin, CheckCircle } from 'lucide-react';
 
 type Pairing = {
   id: number;
+  round: number;
   room: string;
   proposition: string;
   opposition: string;
@@ -18,17 +19,25 @@ type Pairing = {
   propWins: boolean | null;
 };
 
+type PairingsResponse = {
+  currentRound: number;
+  pairings: Pairing[];
+};
+
 const PairingEngine = () => {
   const [pairingAlgorithm, setPairingAlgorithm] = useState('swiss');
-  const [currentRound, setCurrentRound] = useState(3);
+
+  const queryClient = useQueryClient();
   
-  const fetchPairings = async () => {
+  const fetchPairings = async (): Promise<PairingsResponse> => {
     const res = await fetch('http://localhost:3001/api/pairings');
     if (!res.ok) throw new Error('Failed fetching pairings');
     return res.json();
   };
 
-  const { data: pairings = [] } = useQuery<Pairing[]>({ queryKey: ['pairings'], queryFn: fetchPairings });
+  const { data } = useQuery<PairingsResponse>({ queryKey: ['pairings'], queryFn: fetchPairings });
+  const pairings = data?.pairings ?? [];
+  const currentRound = data?.currentRound ?? 1;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -51,6 +60,13 @@ const PairingEngine = () => {
     });
   };
 
+  const { mutateAsync: generate } = useMutation({
+    mutationFn: generatePairings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pairings'] });
+    }
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -70,7 +86,7 @@ const PairingEngine = () => {
               <SelectItem value="round-robin">Round Robin</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={generatePairings} className="flex items-center gap-2">
+          <Button onClick={() => generate()} className="flex items-center gap-2">
             <Shuffle className="h-4 w-4" />
             Generate Pairings
           </Button>
@@ -95,7 +111,7 @@ const PairingEngine = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {pairings.filter((p) => p.status === 'in-progress').length}
+              {pairings.filter((p) => p.round === currentRound && p.status === 'in-progress').length}
             </div>
           </CardContent>
         </Card>
@@ -107,7 +123,7 @@ const PairingEngine = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {pairings.filter((p) => p.status === 'completed').length}
+              {pairings.filter((p) => p.round === currentRound && p.status === 'completed').length}
             </div>
           </CardContent>
         </Card>
@@ -118,7 +134,7 @@ const PairingEngine = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pairings.length}</div>
+            <div className="text-2xl font-bold">{pairings.filter(p => p.round === currentRound).length}</div>
           </CardContent>
         </Card>
       </div>
@@ -143,7 +159,7 @@ const PairingEngine = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pairings.map((pairing) => (
+              {pairings.filter(p => p.round === currentRound).map((pairing) => (
                 <TableRow key={pairing.id}>
                   <TableCell className="font-medium">{pairing.room}</TableCell>
                   <TableCell>

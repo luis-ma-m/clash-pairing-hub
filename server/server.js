@@ -8,10 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Helper to save DB after mutation
+// helper to persist LowDB
 const save = () => db.write();
 
-// Teams CRUD
+// ─── Teams CRUD ────────────────────────────────────────────────────────────
 app.get('/api/teams', async (_req, res) => {
   await db.read();
   res.json(db.data.teams);
@@ -47,17 +47,20 @@ app.delete('/api/teams/:id', async (req, res) => {
   res.json(removed[0]);
 });
 
-// Pairings CRUD
+// ─── Pairings CRUD ─────────────────────────────────────────────────────────
 app.get('/api/pairings', async (_req, res) => {
   await db.read();
-  res.json(db.data.pairings);
+  res.json({
+    pairings: db.data.pairings,
+    currentRound: db.data.currentRound
+  });
 });
 
 app.get('/api/pairings/:id', async (req, res) => {
   await db.read();
-  const pairing = db.data.pairings.find(p => p.id === Number(req.params.id));
-  if (!pairing) return res.status(404).json({ error: 'Not found' });
-  res.json(pairing);
+  const p = db.data.pairings.find(x => x.id === Number(req.params.id));
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  res.json(p);
 });
 
 app.post('/api/pairings', async (req, res) => {
@@ -68,7 +71,7 @@ app.post('/api/pairings', async (req, res) => {
 });
 
 app.put('/api/pairings/:id', async (req, res) => {
-  const idx = db.data.pairings.findIndex(p => p.id === Number(req.params.id));
+  const idx = db.data.pairings.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.data.pairings[idx] = { ...db.data.pairings[idx], ...req.body };
   await save();
@@ -76,40 +79,66 @@ app.put('/api/pairings/:id', async (req, res) => {
 });
 
 app.delete('/api/pairings/:id', async (req, res) => {
-  const idx = db.data.pairings.findIndex(p => p.id === Number(req.params.id));
+  const idx = db.data.pairings.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const removed = db.data.pairings.splice(idx, 1);
   await save();
   res.json(removed[0]);
 });
 
-// Generate pairings - simplistic
-app.post('/api/pairings/generate', async (_req, res) => {
+// ─── Generate Pairings ─────────────────────────────────────────────────────
+app.post('/api/pairings/generate', async (req, res) => {
   await db.read();
-  const teams = [...db.data.teams];
-  const newPairings = [];
+  const { algorithm = 'swiss', round } = req.body;
 
-  for (let i = 0; i < teams.length; i += 2) {
-    const prop = teams[i];
-    const opp = teams[i + 1];
-    if (!opp) break;
+  // bump or set the round
+  if (typeof round === 'number') {
+    db.data.currentRound = round;
+  } else {
+    db.data.currentRound += 1;
+  }
+
+  // clone & sort teams
+  const teamList = [...db.data.teams];
+  const byWinsAndSpeaker = (a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return b.speakerPoints - a.speakerPoints;
+  };
+
+  if (algorithm === 'random') {
+    for (let i = teamList.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [teamList[i], teamList[j]] = [teamList[j], teamList[i]];
+    }
+  } else {
+    // 'swiss' or 'power' (both use same sort for now)
+    teamList.sort(byWinsAndSpeaker);
+  }
+
+  // pair off
+  const newPairings = [];
+  for (let i = 0; i < teamList.length; i += 2) {
+    const A = teamList[i];
+    const B = teamList[i + 1];
+    if (!B) break;
     newPairings.push({
       id: Date.now() + i,
-      room: `Room ${i / 2 + 1}`,
-      proposition: prop.name,
-      opposition: opp.name,
-      judge: '',
+      round: db.data.currentRound,
+      room: `Room ${i/2 + 1}`,
+      proposition: A.name,
+      opposition: B.name,
+      judge: 'TBD',
       status: 'upcoming',
       propWins: null
     });
   }
 
-  db.data.pairings.push(...newPairings);
+  db.data.pairings = db.data.pairings.concat(newPairings);
   await save();
-  res.json(newPairings);
+  res.json({ status: 'ok', newPairings, currentRound: db.data.currentRound });
 });
 
-// Debates CRUD
+// ─── Debates CRUD ──────────────────────────────────────────────────────────
 app.get('/api/debates', async (_req, res) => {
   await db.read();
   res.json(db.data.debates);
@@ -117,9 +146,9 @@ app.get('/api/debates', async (_req, res) => {
 
 app.get('/api/debates/:id', async (req, res) => {
   await db.read();
-  const debate = db.data.debates.find(d => d.id === Number(req.params.id));
-  if (!debate) return res.status(404).json({ error: 'Not found' });
-  res.json(debate);
+  const d = db.data.debates.find(x => x.id === Number(req.params.id));
+  if (!d) return res.status(404).json({ error: 'Not found' });
+  res.json(d);
 });
 
 app.post('/api/debates', async (req, res) => {
@@ -130,7 +159,7 @@ app.post('/api/debates', async (req, res) => {
 });
 
 app.put('/api/debates/:id', async (req, res) => {
-  const idx = db.data.debates.findIndex(d => d.id === Number(req.params.id));
+  const idx = db.data.debates.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.data.debates[idx] = { ...db.data.debates[idx], ...req.body };
   await save();
@@ -138,14 +167,14 @@ app.put('/api/debates/:id', async (req, res) => {
 });
 
 app.delete('/api/debates/:id', async (req, res) => {
-  const idx = db.data.debates.findIndex(d => d.id === Number(req.params.id));
+  const idx = db.data.debates.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const removed = db.data.debates.splice(idx, 1);
   await save();
   res.json(removed[0]);
 });
 
-// Scores CRUD
+// ─── Scores CRUD ───────────────────────────────────────────────────────────
 app.get('/api/scores', async (_req, res) => {
   await db.read();
   res.json(db.data.scores);
@@ -153,8 +182,7 @@ app.get('/api/scores', async (_req, res) => {
 
 app.get('/api/scores/:room', async (req, res) => {
   await db.read();
-  const scores = db.data.scores.filter(s => s.room === req.params.room);
-  res.json(scores);
+  res.json(db.data.scores.filter(s => s.room === req.params.room));
 });
 
 app.post('/api/scores', async (req, res) => {
@@ -180,7 +208,7 @@ app.delete('/api/scores/:id', async (req, res) => {
   res.json(removed[0]);
 });
 
-// Submit team and speaker scores
+// ─── Team & Speaker Scores ─────────────────────────────────────────────────
 app.post('/api/scores/team', async (req, res) => {
   const entry = { id: Date.now(), type: 'team', ...req.body };
   db.data.scores.push(entry);
@@ -195,7 +223,7 @@ app.post('/api/scores/speaker', async (req, res) => {
   res.status(201).json(entry);
 });
 
-// Users CRUD
+// ─── Users CRUD ────────────────────────────────────────────────────────────
 app.get('/api/users', async (_req, res) => {
   await db.read();
   res.json(db.data.users);
@@ -203,9 +231,9 @@ app.get('/api/users', async (_req, res) => {
 
 app.get('/api/users/:id', async (req, res) => {
   await db.read();
-  const user = db.data.users.find(u => u.id === Number(req.params.id));
-  if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json(user);
+  const u = db.data.users.find(x => x.id === Number(req.params.id));
+  if (!u) return res.status(404).json({ error: 'Not found' });
+  res.json(u);
 });
 
 app.post('/api/users', async (req, res) => {
@@ -216,7 +244,7 @@ app.post('/api/users', async (req, res) => {
 });
 
 app.put('/api/users/:id', async (req, res) => {
-  const idx = db.data.users.findIndex(u => u.id === Number(req.params.id));
+  const idx = db.data.users.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.data.users[idx] = { ...db.data.users[idx], ...req.body };
   await save();
@@ -224,13 +252,14 @@ app.put('/api/users/:id', async (req, res) => {
 });
 
 app.delete('/api/users/:id', async (req, res) => {
-  const idx = db.data.users.findIndex(u => u.id === Number(req.params.id));
+  const idx = db.data.users.findIndex(x => x.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const removed = db.data.users.splice(idx, 1);
   await save();
   res.json(removed[0]);
 });
 
+// ─── Start Server ──────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
