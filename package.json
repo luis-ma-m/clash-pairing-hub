@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node --loader ts-node/esm server/server.ts",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs",
+    "create-admin": "node --loader ts-node/esm scripts/createAdmin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
