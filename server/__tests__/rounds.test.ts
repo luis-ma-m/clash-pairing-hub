@@ -96,3 +96,24 @@ describe('Swiss pairing rounds', () => {
     expect(data.settings[0].currentRound).toBe(2);
   });
 });
+
+describe('Round progression', () => {
+  it('does not progress if current round has incomplete pairings', async () => {
+    data.pairings = [
+      { id: 1, round: 1, room: 'R1', proposition: 'Alpha', opposition: 'Bravo', judge: 'J1', status: 'scheduled', propWins: null }
+    ];
+    const res = await request(app).post('/api/rounds/progress');
+    expect(res.status).toBe(400);
+    expect(data.settings[0].currentRound).toBe(1);
+  });
+
+  it('increments current round when all pairings completed', async () => {
+    data.pairings = [
+      { id: 1, round: 1, room: 'R1', proposition: 'Alpha', opposition: 'Bravo', judge: 'J1', status: 'completed', propWins: true }
+    ];
+    const res = await request(app).post('/api/rounds/progress');
+    expect(res.status).toBe(200);
+    expect(res.body.currentRound).toBe(2);
+    expect(data.settings[0].currentRound).toBe(2);
+  });
+});
