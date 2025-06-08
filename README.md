@@ -144,22 +144,31 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 
 ### Environment Variables
 
-Copy the example environment file:
+1. Copy the example environment file:
 
-```bash
-cp .env.example .env
-```
+   ```bash
+   cp .env.example .env
+   ```
 
-The `.env` file contains configuration used by Vite. The main variable is `VITE_API_BASE_URL`, which defines the backend API endpoint. Its default value is `http://localhost:3001`.
+2. Edit `.env` to configure the backend endpoint and Supabase credentials. `VITE_API_BASE_URL` controls the API server URL and defaults to `http://localhost:3001`.
 
-Additional variables are required for Supabase integration:
+   Create a project at [Supabase](https://supabase.com), then copy the **Project URL** and **Anon public key** from the dashboard. Add them to `.env`:
 
-```
-SUPABASE_URL=your Supabase project URL
-SUPABASE_ANON_KEY=your anon key
-VITE_SUPABASE_URL=your Supabase project URL
-VITE_SUPABASE_ANON_KEY=your anon key
-```
+   ```
+   SUPABASE_URL=your Supabase project URL
+   SUPABASE_ANON_KEY=your anon key
+   VITE_SUPABASE_URL=your Supabase project URL
+   VITE_SUPABASE_ANON_KEY=your anon key
+   ```
+
+   The Vite variables are used on the client and should match the server values.
+
+### Supabase Setup
+
+1. Sign in to [Supabase](https://supabase.com) and create a new project.
+2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
+3. Paste those values into the corresponding variables in your `.env` file as shown above.
+4. Ensure these variables are available when starting the API server or the frontend.
 
 3. **Start the development server:**
    ```bash
@@ -178,16 +187,17 @@ VITE_SUPABASE_ANON_KEY=your anon key
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run linting *(assumes dependencies installed)* |
 
-### Local API Server
+### API Server
 
-Run the mock API with:
+Run the backend during development with:
 
 ```bash
 npm run server
 ```
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
-User data for the `/api/users` routes is persisted to `server/db.json`.
+
+When `SUPABASE_URL` and `SUPABASE_ANON_KEY` are provided the server connects to your Supabase project. If those variables are missing it falls back to the local JSON file located at `server/db.json`.
 
 ### Running Tests
 
