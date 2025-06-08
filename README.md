@@ -169,8 +169,8 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
 3. Paste those values into the corresponding variables in your `.env` file as shown above.
 4. Ensure these variables are available when starting the API server or the frontend. The backend will exit with an error if `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing.
-5. Sign In and Sign Up only work when `SUPABASE_URL` and `SUPABASE_ANON_KEY` are valid. If either variable is missing or still contains placeholder values, the application shows the **AuthFallback** screen instead of the login forms.
-6. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
+5. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
+6. The login and signup pages also depend on `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. If these variables are missing, you'll see a setup prompt (the `AuthFallback` component) instead of the forms.
 
 ### Creating the Admin User
 
