@@ -32,6 +32,10 @@ type SpeakerScore = {
 const ScoringInterface = () => {
   const [selectedDebate, setSelectedDebate] = useState('');
   const [scoresData, setScoresData] = useState<SpeakerScore[]>([]);
+  const [propPoints, setPropPoints] = useState(0);
+  const [propMargin, setPropMargin] = useState(0);
+  const [oppPoints, setOppPoints] = useState(0);
+  const [oppMargin, setOppMargin] = useState(0);
   const queryClient = useQueryClient();
 
   const fetchDebates = async () => {
@@ -75,6 +79,28 @@ const ScoringInterface = () => {
     }
   });
 
+  const { mutate: submitTeamScores } = useMutation({
+    mutationFn: async (payload: {
+      proposition: { points: number; margin: number };
+      opposition: { points: number; margin: number };
+    }) => {
+      const res = await apiFetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room: selectedDebate,
+          teamScores: payload,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed submitting team scores');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scores', selectedDebate] });
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    },
+  });
+
   const handleSubmit = () => {
     const valid = scoresData.every(
       (s) => s.content >= 0 && s.content <= 100 && s.style >= 0 && s.style <= 100 && s.strategy >= 0 && s.strategy <= 100
@@ -84,6 +110,19 @@ const ScoringInterface = () => {
       return;
     }
     submitScores(scoresData);
+  };
+
+  const handleTeamSubmit = () => {
+    const validPoints =
+      propPoints >= 0 && propPoints <= 3 && oppPoints >= 0 && oppPoints <= 3;
+    if (!validPoints || isNaN(propMargin) || isNaN(oppMargin)) {
+      alert('Invalid team scores');
+      return;
+    }
+    submitTeamScores({
+      proposition: { points: propPoints, margin: propMargin },
+      opposition: { points: oppPoints, margin: oppMargin },
+    });
   };
 
   useEffect(() => {
@@ -185,11 +224,23 @@ const ScoringInterface = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Team Points</label>
-                        <Input type="number" min="0" max="3" placeholder="0-3" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="3"
+                          value={propPoints}
+                          onChange={(e) => setPropPoints(Number(e.target.value))}
+                          placeholder="0-3"
+                        />
                       </div>
                       <div>
                         <label className="text-sm font-medium">Margin</label>
-                        <Input type="number" placeholder="Point margin" />
+                        <Input
+                          type="number"
+                          value={propMargin}
+                          onChange={(e) => setPropMargin(Number(e.target.value))}
+                          placeholder="Point margin"
+                        />
                       </div>
                     </div>
                   </CardContent>
@@ -206,11 +257,23 @@ const ScoringInterface = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Team Points</label>
-                        <Input type="number" min="0" max="3" placeholder="0-3" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="3"
+                          value={oppPoints}
+                          onChange={(e) => setOppPoints(Number(e.target.value))}
+                          placeholder="0-3"
+                        />
                       </div>
                       <div>
                         <label className="text-sm font-medium">Margin</label>
-                        <Input type="number" placeholder="Point margin" />
+                        <Input
+                          type="number"
+                          value={oppMargin}
+                          onChange={(e) => setOppMargin(Number(e.target.value))}
+                          placeholder="Point margin"
+                        />
                       </div>
                     </div>
                   </CardContent>
@@ -218,7 +281,7 @@ const ScoringInterface = () => {
               </div>
               
               <div className="mt-6 flex justify-end">
-                <Button>Submit Team Scores</Button>
+                <Button onClick={handleTeamSubmit}>Submit Team Scores</Button>
               </div>
             </TabsContent>
 
