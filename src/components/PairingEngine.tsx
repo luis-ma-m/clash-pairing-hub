@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { usePairings, type Pairing } from '@/lib/hooks/usePairings';
+import { useRounds } from '@/lib/hooks/useRounds';
 
 const PairingEngine: React.FC = () => {
   const [pairingAlgorithm, setPairingAlgorithm] = useState<'swiss' | 'power' | 'random'>('swiss');
   const { pairings, currentRound } = usePairings();
+  const { rounds } = useRounds();
 
   return (
     <div>
-      <h2>Round {currentRound}</h2>
+      <h2>Round {currentRound} / {rounds.length}</h2>
       <select
         value={pairingAlgorithm}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>

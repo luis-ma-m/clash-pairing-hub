@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Users, Trophy, Play, Pause, TrendingUp, Target } from 'lucide-react';
+import { Users, Trophy, Play, Pause, TrendingUp, Target, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch, expectJson } from '@/lib/api';
+import { useTournaments } from '@/lib/hooks/useTournaments';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -42,6 +45,10 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
     { label: 'Active Teams',      value: quick.activeTeams,     icon: Users },
     { label: 'Current Leader',    value: quick.currentLeader,   icon: Trophy },
   ];
+
+  const { tournaments, addTournament, deleteTournament } = useTournaments();
+  const [name, setName] = useState('');
+  const [format, setFormat] = useState('BP');
 
   return (
     <div className="space-y-6">
@@ -91,6 +98,35 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
 
         {/* Recent activity and config cards omitted for brevity */}
       </div>
+
+      {/* Basic tournament list & creation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Tournaments</CardTitle>
+          <CardDescription>Manage tournaments</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            {tournaments.map((t) => (
+              <div key={t.id} className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span>{t.name}</span>
+                  {t.status && <Badge variant="secondary">{t.status}</Badge>}
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => deleteTournament(t.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {tournaments.length === 0 && <p className="text-sm text-muted-foreground">No tournaments</p>}
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Input placeholder="Tournament name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Format" className="w-24" value={format} onChange={(e) => setFormat(e.target.value)} />
+            <Button onClick={async () => { if (name) { await addTournament({ name, format, status: 'draft', settings: null, owner_id: undefined }); setName(''); } }}>Add</Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

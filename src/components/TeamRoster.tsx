@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
 import { useTeams } from "@/lib/hooks/useTeams";
+import { useSpeakers } from "@/lib/hooks/useSpeakers";
 import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv";
 
 type Team = {
@@ -44,6 +45,7 @@ const TeamRoster = () => {
   };
 
   const { teams, addTeam, updateTeam, deleteTeam } = useTeams();
+  const { speakers: speakerList } = useSpeakers();
 
 
   const createTeam = async () => {
@@ -95,7 +97,7 @@ const TeamRoster = () => {
   );
 
   const totalTeams = teams.length;
-  const totalSpeakers = teams.reduce((acc, t) => acc + t.speakers.length, 0);
+  const totalSpeakers = speakerList.length;
   const averageTeamSize = totalTeams ? (totalSpeakers / totalTeams).toFixed(1) : '0';
 
   let universities = 0;
