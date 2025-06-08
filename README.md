@@ -168,7 +168,7 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 1. Sign in to [Supabase](https://supabase.com) and create a new project.
 2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
 3. Paste those values into the corresponding variables in your `.env` file as shown above.
-4. Ensure these variables are available when starting the API server or the frontend.
+4. Ensure these variables are available when starting the API server or the frontend. The backend will exit with an error if `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing.
 
 3. **Start the development server:**
    ```bash
@@ -196,8 +196,7 @@ npm run server
 ```
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
-
-When `SUPABASE_URL` and `SUPABASE_ANON_KEY` are provided the server connects to your Supabase project. If those variables are missing it falls back to the local JSON file located at `server/db.json`.
+The API server requires `SUPABASE_URL` and `SUPABASE_ANON_KEY` to connect to your Supabase project. The server will not start if either variable is missing.
 
 ### Running Tests
 
