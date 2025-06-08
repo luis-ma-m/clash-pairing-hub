@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
 const app = express();
 app.use(cors());
@@ -9,14 +10,64 @@ app.use(express.json());
 
 // ─── Supabase Client ───────────────────────────────────────────────────────
 
-const SUPABASE_URL = process.env.SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string;
+let SUPABASE_URL = process.env.SUPABASE_URL as string | undefined;
+let SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string | undefined;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables');
+  if (process.env.NODE_ENV === 'test') {
+    SUPABASE_URL = 'http://localhost';
+    SUPABASE_ANON_KEY = 'anon';
+  } else {
+    throw new Error('Missing Supabase environment variables');
+  }
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Validation Schemas
+const teamSchema = z.object({
+  name: z.string(),
+  organization: z.string(),
+  speakers: z.array(z.string()),
+  wins: z.number().optional(),
+  losses: z.number().optional(),
+  speakerPoints: z.number().optional(),
+});
+
+const pairingSchema = z.object({
+  round: z.number(),
+  room: z.string(),
+  proposition: z.string(),
+  opposition: z.string(),
+  judge: z.string(),
+  status: z.string(),
+  propWins: z.boolean().nullable().optional(),
+});
+
+const debateSchema = z.object({
+  room: z.string(),
+  proposition: z.string(),
+  opposition: z.string(),
+  judge: z.string(),
+  status: z.string(),
+});
+
+const scoreSchema = z.object({
+  room: z.string(),
+  speaker: z.string(),
+  team: z.string(),
+  position: z.string(),
+  content: z.number(),
+  style: z.number(),
+  strategy: z.number(),
+  total: z.number(),
+});
+
+const userSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  role: z.string(),
+});
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
@@ -38,9 +89,13 @@ app.get('/api/teams/:id', async (req, res) => {
 });
 
 app.post('/api/teams', async (req, res) => {
+  const parsed = teamSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('teams')
-    .insert(req.body)
+    .insert(parsed.data)
     .select()
     .single();
   if (error) return res.status(400).json({ error: error.message });
@@ -49,9 +104,13 @@ app.post('/api/teams', async (req, res) => {
 
 app.put('/api/teams/:id', async (req, res) => {
   const id = Number(req.params.id);
+  const parsed = teamSchema.partial().safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('teams')
-    .update(req.body)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single();
@@ -95,9 +154,13 @@ app.get('/api/pairings/:id', async (req, res) => {
 });
 
 app.post('/api/pairings', async (req, res) => {
+  const parsed = pairingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('pairings')
-    .insert(req.body)
+    .insert(parsed.data)
     .select()
     .single();
   if (error) return res.status(400).json({ error: error.message });
@@ -106,9 +169,13 @@ app.post('/api/pairings', async (req, res) => {
 
 app.put('/api/pairings/:id', async (req, res) => {
   const id = Number(req.params.id);
+  const parsed = pairingSchema.partial().safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('pairings')
-    .update(req.body)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single();
@@ -148,9 +215,13 @@ app.get('/api/debates/:id', async (req, res) => {
 });
 
 app.post('/api/debates', async (req, res) => {
+  const parsed = debateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('debates')
-    .insert(req.body)
+    .insert(parsed.data)
     .select()
     .single();
   if (error) return res.status(400).json({ error: error.message });
@@ -159,9 +230,13 @@ app.post('/api/debates', async (req, res) => {
 
 app.put('/api/debates/:id', async (req, res) => {
   const id = Number(req.params.id);
+  const parsed = debateSchema.partial().safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('debates')
-    .update(req.body)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single();
@@ -193,9 +268,13 @@ app.get('/api/scores/:room', async (req, res) => {
 });
 
 app.post('/api/scores', async (req, res) => {
+  const parsed = scoreSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('scores')
-    .insert(req.body)
+    .insert(parsed.data)
     .select()
     .single();
   if (error) return res.status(400).json({ error: error.message });
@@ -222,9 +301,13 @@ app.get('/api/users/:id', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
+  const parsed = userSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('users')
-    .insert(req.body)
+    .insert(parsed.data)
     .select()
     .single();
   if (error) return res.status(400).json({ error: error.message });
@@ -233,9 +316,13 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   const id = Number(req.params.id);
+  const parsed = userSchema.partial().safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const { data, error } = await supabase
     .from('users')
-    .update(req.body)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single();
