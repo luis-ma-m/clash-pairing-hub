@@ -1,13 +1,13 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import TeamRoster from '../TeamRoster';
-import { supabase } from '@/lib/supabase';
+import { render, screen, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import TeamRoster from "../TeamRoster";
+import { supabase } from "@/lib/supabase";
 
-jest.mock('@/lib/supabase');
+jest.mock("@/lib/supabase");
 
 const mockTeams = [
-  { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], wins: 0, losses: 0, speakerPoints: 0 },
+  { id: 1, name: "Alpha", organization: "Org", speakers: ["A1"], wins: 0, losses: 0, speakerPoints: 0 },
 ];
 
 const fromMock = jest.fn().mockReturnValue({
@@ -30,17 +30,17 @@ const renderComponent = async () => {
   });
 };
 
-describe('TeamRoster', () => {
-  it('renders teams from Supabase', async () => {
+describe("TeamRoster", () => {
+  it("renders teams from Supabase", async () => {
     await renderComponent();
 
-    // ensure supabase.from was called for the "teams" table
-    expect(fromMock).toHaveBeenCalledWith('teams');
+    // verify we queried the "teams" table
+    expect(fromMock).toHaveBeenCalledWith("teams");
 
-    // wait until our mock team appears in the UI
+    // wait for our mock to show up
     await waitFor(() => {
-      expect(screen.getByText('Alpha')).toBeInTheDocument();
-      expect(screen.getByText('Org')).toBeInTheDocument();
+      expect(screen.getByText("Alpha")).toBeInTheDocument();
+      expect(screen.getByText("Org")).toBeInTheDocument();
     });
   });
 });

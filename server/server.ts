@@ -74,16 +74,13 @@ app.delete('/api/teams/:id', async (req, res) => {
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
 
 app.get('/api/pairings', async (_req, res) => {
-  const { data: pairings, error } = await supabase.from('pairings').select('*');
-  const { data: roundData, error: roundError } = await supabase
-    .from('settings')
-    .select('currentRound')
-    .single();
-  if (error || roundError) {
-    const msg = error?.message || roundError?.message;
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: setting, error: sErr } = await supabase.from('settings').select('currentRound').single();
+  if (pErr || sErr) {
+    const msg = pErr?.message || sErr?.message;
     return res.status(500).json({ error: msg });
   }
-  res.json({ pairings: pairings || [], currentRound: roundData?.currentRound || 1 });
+  res.json({ pairings: pairings || [], currentRound: setting?.currentRound ?? 1 });
 });
 
 app.get('/api/pairings/:id', async (req, res) => {
@@ -262,27 +259,25 @@ app.delete('/api/users/:id', async (req, res) => {
 
 // 1) Standings
 app.get('/api/analytics/standings', async (_req, res) => {
-  const { data: teams, error: teamErr } = await supabase.from('teams').select('*');
-  const { data: pairings, error: pairErr } = await supabase.from('pairings').select('*');
-  const { data: scores, error: scoreErr } = await supabase.from('scores').select('*');
-  if (teamErr || pairErr || scoreErr) {
-    const msg = teamErr?.message || pairErr?.message || scoreErr?.message;
+  const { data: teams, error: tErr } = await supabase.from('teams').select('*');
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: scores, error: sErr } = await supabase.from('scores').select('*');
+  if (tErr || pErr || sErr) {
+    const msg = tErr?.message || pErr?.message || sErr?.message;
     return res.status(500).json({ error: msg });
   }
 
   const map = new Map<string, { team: string; wins: number; losses: number; speakerPoints: number }>();
-  teams?.forEach(t => map.set(t.name, { team: t.name, wins: 0, losses: 0, speakerPoints: 0 }));
-
-  pairings?.forEach(p => {
+  teams.forEach(t => map.set(t.name, { team: t.name, wins: 0, losses: 0, speakerPoints: 0 }));
+  pairings.forEach(p => {
     if (p.status === 'completed') {
       const prop = map.get(p.proposition)!;
-      const opp  = map.get(p.opposition)!;
+      const opp = map.get(p.opposition)!;
       if (p.propWins) { prop.wins++; opp.losses++; }
-      else           { prop.losses++; opp.wins++; }
+      else             { prop.losses++; opp.wins++; }
     }
   });
-
-  scores?.forEach(s => {
+  scores.forEach(s => {
     const e = map.get(s.team);
     if (e) e.speakerPoints += s.total || 0;
   });
@@ -301,8 +296,7 @@ app.get('/api/analytics/speakers', async (_req, res) => {
   if (error) return res.status(500).json({ error: error.message });
 
   const map = new Map<string, { name: string; team: string; total: number; count: number }>();
-
-  scores?.forEach(s => {
+  scores.forEach(s => {
     if (!map.has(s.speaker)) map.set(s.speaker, { name: s.speaker, team: s.team, total: 0, count: 0 });
     const e = map.get(s.speaker)!;
     e.total += s.total || 0;
@@ -319,17 +313,13 @@ app.get('/api/analytics/speakers', async (_req, res) => {
 
 // 3) Performance
 app.get('/api/analytics/performance', async (_req, res) => {
-  const { data: pairings, error: pairErr } = await supabase.from('pairings').select('*');
-  const { data: scores, error: scoreErr } = await supabase.from('scores').select('*');
-  if (pairErr || scoreErr) {
-    const msg = pairErr?.message || scoreErr?.message;
-    return res.status(500).json({ error: msg });
-  }
+  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*');
+  const { data: scores, error: sErr } = await supabase.from('scores').select('*');
+  if (pErr || sErr) { return res.status(500).json({ error: (pErr || sErr)!.message }); }
 
   const rounds = new Map<number, { round: number; total: number; debates: number }>();
-
-  scores?.forEach(s => {
-    const p = pairings?.find(p => p.room === s.room);
+  scores.forEach(s => {
+    const p = pairings.find(p => p.room === s.room);
     const r = p ? p.round : 1;
     if (!rounds.has(r)) rounds.set(r, { round: r, total: 0, debates: 0 });
     const e = rounds.get(r)!;
@@ -348,14 +338,16 @@ app.get('/api/analytics/performance', async (_req, res) => {
 app.get('/api/analytics/results', async (_req, res) => {
   const { data: pairings, error } = await supabase.from('pairings').select('*');
   if (error) return res.status(500).json({ error: error.message });
+
   let propWins = 0, oppWins = 0, ties = 0;
-  pairings?.forEach(p => {
+  pairings.forEach(p => {
     if (p.status === 'completed') {
       if (p.propWins === true) propWins++;
       else if (p.propWins === false) oppWins++;
-      else ties++;
+      else                        ties++;
     }
   });
+
   res.json({ propWins, oppWins, ties });
 });
 
