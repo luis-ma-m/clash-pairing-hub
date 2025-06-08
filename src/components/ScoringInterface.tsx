@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,36 +10,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, Trophy, User, Clock } from 'lucide-react';
 
-const ScoringInterface = () => {
-  const [selectedDebate, setSelectedDebate] = useState('A1');
-  
-  const mockDebates = [
-    {
-      room: 'A1',
-      proposition: 'Oxford A',
-      opposition: 'Cambridge B',
-      judge: 'Dr. Sarah Wilson',
-      status: 'scoring',
-      propScore: null,
-      oppScore: null
-    },
-    {
-      room: 'A2',
-      proposition: 'LSE Debaters',
-      opposition: 'Edinburgh A',
-      judge: 'Prof. Michael Brown',
-      status: 'completed',
-      propScore: 2,
-      oppScore: 1
-    }
-  ];
+type Debate = {
+  room: string;
+  proposition: string;
+  opposition: string;
+  judge: string;
+  status: string;
+};
 
-  const mockSpeakerScores = [
-    { speaker: 'Alice Johnson', team: 'Oxford A', position: 'PM', content: 78, style: 82, strategy: 80, total: 240 },
-    { speaker: 'Bob Smith', team: 'Oxford A', position: 'DPM', content: 75, style: 79, strategy: 77, total: 231 },
-    { speaker: 'David Brown', team: 'Cambridge B', position: 'LO', content: 81, style: 78, strategy: 83, total: 242 },
-    { speaker: 'Emma Wilson', team: 'Cambridge B', position: 'DLO', content: 77, style: 81, strategy: 79, total: 237 }
-  ];
+type SpeakerScore = {
+  speaker: string;
+  team: string;
+  position: string;
+  content: number;
+  style: number;
+  strategy: number;
+  total: number;
+};
+
+const ScoringInterface = () => {
+  const [selectedDebate, setSelectedDebate] = useState('');
+
+  const fetchDebates = async () => {
+    const res = await fetch('http://localhost:3001/api/debates');
+    if (!res.ok) throw new Error('Failed fetching debates');
+    return res.json();
+  };
+
+  const { data: debates = [] } = useQuery<Debate[]>({ queryKey: ['debates'], queryFn: fetchDebates });
+
+  const fetchSpeakerScores = async () => {
+    if (!selectedDebate) return [];
+    const res = await fetch(`http://localhost:3001/api/scores/${selectedDebate}`);
+    if (!res.ok) throw new Error('Failed fetching scores');
+    return res.json();
+  };
+
+  const { data: speakerScores = [] } = useQuery<SpeakerScore[]>({
+    queryKey: ['scores', selectedDebate],
+    queryFn: fetchSpeakerScores,
+    enabled: !!selectedDebate
+  });
+
+  useEffect(() => {
+    if (!selectedDebate && debates.length > 0) {
+      setSelectedDebate(debates[0].room);
+    }
+  }, [debates, selectedDebate]);
+
 
   return (
     <div className="space-y-6">
@@ -53,7 +72,7 @@ const ScoringInterface = () => {
               <SelectValue placeholder="Select debate room" />
             </SelectTrigger>
             <SelectContent>
-              {mockDebates.map((debate) => (
+              {debates.map((debate) => (
                 <SelectItem key={debate.room} value={debate.room}>
                   Room {debate.room} - {debate.status}
                 </SelectItem>
@@ -183,7 +202,7 @@ const ScoringInterface = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockSpeakerScores.map((speaker, index) => (
+                  {speakerScores.map((speaker, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{speaker.speaker}</TableCell>
                       <TableCell>{speaker.team}</TableCell>

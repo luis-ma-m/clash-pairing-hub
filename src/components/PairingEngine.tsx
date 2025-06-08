@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,48 +8,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shuffle, Play, Clock, MapPin, CheckCircle } from 'lucide-react';
 
+type Pairing = {
+  id: number;
+  room: string;
+  proposition: string;
+  opposition: string;
+  judge: string;
+  status: string;
+  propWins: boolean | null;
+};
+
 const PairingEngine = () => {
   const [pairingAlgorithm, setPairingAlgorithm] = useState('swiss');
   const [currentRound, setCurrentRound] = useState(3);
   
-  const mockPairings = [
-    {
-      id: 1,
-      room: 'A1',
-      proposition: 'Oxford A',
-      opposition: 'Cambridge B',
-      judge: 'Dr. Sarah Wilson',
-      status: 'completed',
-      propWins: true
-    },
-    {
-      id: 2,
-      room: 'A2',
-      proposition: 'LSE Debaters',
-      opposition: 'Edinburgh A',
-      judge: 'Prof. Michael Brown',
-      status: 'in-progress',
-      propWins: null
-    },
-    {
-      id: 3,
-      room: 'B1',
-      proposition: 'KCL Speakers',
-      opposition: 'Bristol A',
-      judge: 'Dr. Emma Davis',
-      status: 'upcoming',
-      propWins: null
-    },
-    {
-      id: 4,
-      room: 'B2',
-      proposition: 'Warwick A',
-      opposition: 'Durham B',
-      judge: 'Prof. James Miller',
-      status: 'upcoming',
-      propWins: null
-    }
-  ];
+  const fetchPairings = async () => {
+    const res = await fetch('http://localhost:3001/api/pairings');
+    if (!res.ok) throw new Error('Failed fetching pairings');
+    return res.json();
+  };
+
+  const { data: pairings = [] } = useQuery<Pairing[]>({ queryKey: ['pairings'], queryFn: fetchPairings });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -63,9 +43,12 @@ const PairingEngine = () => {
     }
   };
 
-  const generatePairings = () => {
-    console.log(`Generating ${pairingAlgorithm} pairings for round ${currentRound}`);
-    // Swiss algorithm implementation would go here
+  const generatePairings = async () => {
+    await fetch('http://localhost:3001/api/pairings/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ algorithm: pairingAlgorithm, round: currentRound })
+    });
   };
 
   return (
@@ -112,7 +95,7 @@ const PairingEngine = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockPairings.filter(p => p.status === 'in-progress').length}
+              {pairings.filter((p) => p.status === 'in-progress').length}
             </div>
           </CardContent>
         </Card>
@@ -124,7 +107,7 @@ const PairingEngine = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockPairings.filter(p => p.status === 'completed').length}
+              {pairings.filter((p) => p.status === 'completed').length}
             </div>
           </CardContent>
         </Card>
@@ -135,7 +118,7 @@ const PairingEngine = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockPairings.length}</div>
+            <div className="text-2xl font-bold">{pairings.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +143,7 @@ const PairingEngine = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockPairings.map((pairing) => (
+              {pairings.map((pairing) => (
                 <TableRow key={pairing.id}>
                   <TableCell className="font-medium">{pairing.room}</TableCell>
                   <TableCell>
