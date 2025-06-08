@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["jest", "@testing-library/jest-dom", "node"]
+  },
+  "include": ["src", "server", "**/*.test.ts", "**/*.test.tsx"]
+}

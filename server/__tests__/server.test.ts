@@ -34,4 +34,12 @@ describe('API Endpoints', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
+
+  it('GET /api/tournament/stats should return stats', async () => {
+    const res = await request(app).get('/api/tournament/stats');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('currentRound');
+    expect(res.body).toHaveProperty('totalRounds');
+    expect(res.body).toHaveProperty('quickStats');
+  });
 });

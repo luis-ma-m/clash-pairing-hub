@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Users, Trophy, Play, Pause, TrendingUp, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -17,49 +18,28 @@ interface TournamentManagementProps {
 }
 
 const TournamentManagement = ({ activeTournament }: TournamentManagementProps) => {
-  const currentRound = 3;
-  const totalRounds = activeTournament.rounds;
-  const progress = (currentRound / totalRounds) * 100;
-
-  const fetchStandings = async () => {
-    const res = await fetch('http://localhost:3001/api/analytics/standings');
-    if (!res.ok) throw new Error('Failed fetching standings');
+  const fetchStats = async () => {
+    const res = await apiFetch('/api/tournament/stats');
+    if (!res.ok) throw new Error('Failed fetching stats');
     return res.json();
   };
 
-  const fetchPerformance = async () => {
-    const res = await fetch('http://localhost:3001/api/analytics/performance');
-    if (!res.ok) throw new Error('Failed fetching performance');
-    return res.json();
-  };
-
-  const { data: teamStandings = [] } = useQuery({
-    queryKey: ['tm-standings'],
-    queryFn: fetchStandings,
+  const { data: stats } = useQuery({
+    queryKey: ['tournament-stats'],
+    queryFn: fetchStats,
     refetchInterval: 5000
   });
 
-  const { data: performanceData = [] } = useQuery({
-    queryKey: ['tm-performance'],
-    queryFn: fetchPerformance,
-    refetchInterval: 5000
-  });
-
-  const totalDebates = performanceData.reduce((acc, r) => acc + (r.debates || 0), 0);
-  const avgSpeakerScore = (() => {
-    if (!totalDebates) return 0;
-    const sum = performanceData.reduce((acc, r) => acc + r.avgScore * r.debates, 0);
-    return (sum / totalDebates).toFixed(1);
-  })();
-
-  const currentLeader = teamStandings[0]?.team || '-';
-  const leaderPoints = teamStandings[0]?.points ?? 0;
+  const currentRound = stats?.currentRound ?? 0;
+  const totalRounds = stats?.totalRounds ?? activeTournament.rounds;
+  const progress = totalRounds ? (currentRound / totalRounds) * 100 : 0;
+  const quick = stats?.quickStats || { totalDebates: 0, avgSpeakerScore: 0, activeTeams: 0, currentLeader: '-' };
 
   const quickStats = [
-    { label: 'Total Debates', value: totalDebates, icon: Target },
-    { label: 'Avg Speaker Score', value: avgSpeakerScore, icon: TrendingUp },
-    { label: 'Active Teams', value: teamStandings.length, icon: Users },
-    { label: 'Current Leader', value: `${currentLeader} (${leaderPoints})`, icon: Trophy }
+    { label: 'Total Debates', value: quick.totalDebates, icon: Target },
+    { label: 'Avg Speaker Score', value: quick.avgSpeakerScore, icon: TrendingUp },
+    { label: 'Active Teams', value: quick.activeTeams, icon: Users },
+    { label: 'Current Leader', value: quick.currentLeader, icon: Trophy }
   ];
 
   return (
