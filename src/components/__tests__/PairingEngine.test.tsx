@@ -26,9 +26,8 @@ globalThis.fetch = jest.fn(() =>
 ) as jest.Mock;
 
 const renderComponent = () => {
-  const client = new QueryClient();
   return render(
-    <QueryClientProvider client={client}>
+    <QueryClientProvider client={new QueryClient()}>
       <PairingEngine />
     </QueryClientProvider>
   );
@@ -38,8 +37,8 @@ describe('PairingEngine', () => {
   it('renders pairings from API', async () => {
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText(/Team A/)).toBeInTheDocument();
-      expect(screen.getByText(/Team B/)).toBeInTheDocument();
+      expect(screen.getByText('Team A', { exact: false })).toBeInTheDocument();
+      expect(screen.getByText('Team B', { exact: false })).toBeInTheDocument();
     });
   });
 });
