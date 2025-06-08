@@ -13,6 +13,7 @@ export async function loadConstraintSettings(): Promise<ConstraintSettings> {
       .from('constraint_settings')
       .select('name, enabled');
     if (error || !data) throw error;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cfg: any = { ...defaultConfig };
     for (const row of data) cfg[row.name] = row.enabled;
     return cfg as ConstraintSettings;

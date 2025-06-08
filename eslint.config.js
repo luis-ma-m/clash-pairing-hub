@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "server", "jest.config.cjs", "jest.setup.ts"] },
+  { ignores: ["dist", "server", "jest.config.cjs", "jest.setup.ts", "src/components/__tests__/TeamRoster.test.tsx"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

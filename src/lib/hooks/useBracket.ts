@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 export interface BracketRecord {
   id: string;
   type: 'single' | 'double';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
 }
 

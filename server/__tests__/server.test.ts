@@ -61,16 +61,16 @@ jest.mock('@supabase/supabase-js', () => {
           };
         },
         update: (values: any) => ({
-          eq: (field: string, value: any) => ({
-            select: () => ({
-              single: () => {
-                const idx = data[table].findIndex((r: any) => r[field] === value);
-                if (idx !== -1)
-                  data[table][idx] = { ...data[table][idx], ...values };
-                return Promise.resolve({ data: data[table][idx] || null, error: null });
-              },
-            }),
-          }),
+          eq: (field: string, value: any) => {
+            const doUpdate = () => {
+              const idx = data[table].findIndex((r: any) => r[field] === value);
+              if (idx !== -1) data[table][idx] = { ...data[table][idx], ...values };
+              return { data: data[table][idx] || null, error: null };
+            };
+            const promise: any = makeThenable(doUpdate());
+            promise.select = () => ({ single: () => Promise.resolve(doUpdate()) });
+            return promise;
+          },
         }),
         delete: () => ({
           eq: (field: string, value: any) => ({

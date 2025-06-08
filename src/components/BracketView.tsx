@@ -10,9 +10,11 @@ const BracketView: React.FC = () => {
 
   return (
     <div className="flex gap-4 overflow-x-auto">
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {rounds.map((round: any) => (
         <div key={round.round} className="min-w-[150px]">
           <h3 className="font-semibold mb-2 text-center">Round {round.round}</h3>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {round.matches.map((m: any) => (
             <div key={m.id} className="border rounded p-2 mb-2 text-sm text-center">
               <div>{m.team1 || 'TBD'}</div>
