@@ -46,7 +46,38 @@ const scores = {
   ]
 };
 
+function updateTeamStats() {
+  const stats = {};
+  Object.values(scores).forEach((roomScores) => {
+    roomScores.forEach((s) => {
+      if (!stats[s.team]) stats[s.team] = { wins: 0, losses: 0, speakerPoints: 0 };
+      stats[s.team].speakerPoints += s.total;
+    });
+  });
+
+  pairings.forEach((p) => {
+    if (p.status !== 'completed') return;
+    if (!stats[p.proposition]) stats[p.proposition] = { wins: 0, losses: 0, speakerPoints: 0 };
+    if (!stats[p.opposition]) stats[p.opposition] = { wins: 0, losses: 0, speakerPoints: 0 };
+    if (p.propWins) {
+      stats[p.proposition].wins += 1;
+      stats[p.opposition].losses += 1;
+    } else {
+      stats[p.proposition].losses += 1;
+      stats[p.opposition].wins += 1;
+    }
+  });
+
+  teams.forEach((team) => {
+    const s = stats[team.name] || { wins: 0, losses: 0, speakerPoints: 0 };
+    team.wins = s.wins;
+    team.losses = s.losses;
+    team.speakerPoints = s.speakerPoints;
+  });
+}
+
 app.get('/api/teams', (req, res) => {
+  updateTeamStats();
   res.json(teams);
 });
 
@@ -54,6 +85,22 @@ app.post('/api/teams', (req, res) => {
   const team = { id: teams.length + 1, wins: 0, losses: 0, speakerPoints: 0, ...req.body };
   teams.push(team);
   res.status(201).json(team);
+});
+
+app.put('/api/teams/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const idx = teams.findIndex((t) => t.id === id);
+  if (idx === -1) return res.status(404).send('Team not found');
+  teams[idx] = { ...teams[idx], ...req.body };
+  res.json(teams[idx]);
+});
+
+app.delete('/api/teams/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const idx = teams.findIndex((t) => t.id === id);
+  if (idx === -1) return res.status(404).send('Team not found');
+  const removed = teams.splice(idx, 1)[0];
+  res.json(removed);
 });
 
 app.get('/api/pairings', (req, res) => {
