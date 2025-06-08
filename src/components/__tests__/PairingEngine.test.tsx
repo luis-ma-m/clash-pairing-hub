@@ -22,7 +22,9 @@ const mockResponse = {
 globalThis.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
+    headers: { get: () => 'application/json' },
     json: () => Promise.resolve(mockResponse),
+    text: () => Promise.resolve(JSON.stringify(mockResponse)),
   })
 ) as jest.Mock;
 

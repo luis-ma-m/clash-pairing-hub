@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
-import { apiFetch } from "@/lib/api";
+import { apiFetch, expectJson } from "@/lib/api";
 import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv";
 
 type Team = {
@@ -49,7 +49,7 @@ const TeamRoster = () => {
   const fetchTeams = async () => {
     const res = await apiFetch('/api/teams');
     if (!res.ok) throw new Error('Failed fetching teams');
-    return res.json();
+    return expectJson(res);
   };
 
   const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
@@ -69,7 +69,7 @@ const TeamRoster = () => {
       })
     });
     if (!res.ok) throw new Error('Failed to add team');
-    return res.json();
+    return expectJson(res);
   };
 
   const { mutateAsync: createTeam } = useMutation({
@@ -86,7 +86,7 @@ const TeamRoster = () => {
       body: JSON.stringify(payload.updates)
     });
     if (!res.ok) throw new Error('Failed to update team');
-    return res.json();
+    return expectJson(res);
   };
 
   const deleteTeam = async (id: number) => {
@@ -94,7 +94,7 @@ const TeamRoster = () => {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Failed to delete team');
-    return res.json();
+    return expectJson(res);
   };
 
   const { mutateAsync: editTeam } = useMutation({

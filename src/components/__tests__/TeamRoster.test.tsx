@@ -11,7 +11,9 @@ const mockTeams = [
 globalThis.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve(mockTeams)
+    headers: { get: () => 'application/json' },
+    json: () => Promise.resolve(mockTeams),
+    text: () => Promise.resolve(JSON.stringify(mockTeams))
   })
 ) as jest.Mock;
 
