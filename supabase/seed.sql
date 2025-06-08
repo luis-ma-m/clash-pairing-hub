@@ -9,3 +9,10 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.settings (id, "currentRound")
 VALUES ('11111111-1111-1111-1111-111111111111', 1)
 ON CONFLICT DO NOTHING;
+
+-- Default constraint settings
+INSERT INTO public.constraint_settings (name, enabled) VALUES
+  ('NoRepeatMatch', true),
+  ('JudgeAvailability', true),
+  ('RoomCapacity', true)
+ON CONFLICT (name) DO NOTHING;

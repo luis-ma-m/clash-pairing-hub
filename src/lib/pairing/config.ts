@@ -13,9 +13,13 @@ export async function loadConstraintSettings(): Promise<ConstraintSettings> {
       .from('constraint_settings')
       .select('name, enabled');
     if (error || !data) throw error;
-    const cfg: any = { ...defaultConfig };
-    for (const row of data) cfg[row.name] = row.enabled;
-    return cfg as ConstraintSettings;
+    const cfg: ConstraintSettings = { ...defaultConfig } as ConstraintSettings;
+    for (const row of data) {
+      if (row.name in cfg) {
+        cfg[row.name as keyof ConstraintSettings] = row.enabled;
+      }
+    }
+    return cfg;
   } catch {
     return defaultConfig as ConstraintSettings;
   }
