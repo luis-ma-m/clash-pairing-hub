@@ -26,7 +26,9 @@ describe('API Endpoints', () => {
   it('GET /api/pairings should return pairings', async () => {
     const res = await request(app).get('/api/pairings');
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body).toHaveProperty('pairings');
+    expect(Array.isArray(res.body.pairings)).toBe(true);
+    expect(res.body).toHaveProperty('currentRound');
   });
 
   it('GET /api/scores/:room should return scores', async () => {

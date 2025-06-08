@@ -107,7 +107,8 @@ app.post('/api/teams', (req, res) => {
 });
 
 app.get('/api/pairings', (req, res) => {
-  res.json(pairings);
+  const currentRound = 1;
+  res.json({ pairings, currentRound });
 });
 
 app.post('/api/pairings/generate', (req, res) => {
