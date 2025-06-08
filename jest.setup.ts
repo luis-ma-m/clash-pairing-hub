@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';
-import { JSDOM } from 'jsdom';
 
 // Polyfill TextEncoder/TextDecoder for the test environment
 if (typeof global.TextEncoder === 'undefined') {
@@ -11,6 +10,8 @@ if (typeof global.TextDecoder === 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).TextDecoder = TextDecoder;
 }
+
+import { JSDOM } from 'jsdom';
 
 // Basic DOM polyfill for the test runner
 if (typeof document === 'undefined') {

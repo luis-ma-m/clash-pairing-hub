@@ -1,5 +1,5 @@
 // jest.config.js
-export default {
+module.exports = {
   preset: 'ts-jest/presets/default-esm',
   // Most tests (components) run in a jsdom environment; server tests can override as needed
   testEnvironment: 'jsdom',
