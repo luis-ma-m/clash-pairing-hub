@@ -18,7 +18,8 @@ const seed = {
     { id: 1, currentRound: 1 }
   ],
   debates: [],
-  users: []
+  users: [],
+  brackets: []
 };
 let data: any = JSON.parse(JSON.stringify(seed));
 
@@ -119,6 +120,14 @@ describe('Core API Endpoints', () => {
     expect(res.body).toHaveProperty('pairings');
     expect(Array.isArray(res.body.pairings)).toBe(true);
     expect(res.body).toHaveProperty('currentRound');
+  });
+
+  it('POST /api/bracket should generate a bracket', async () => {
+    const res = await request(app)
+      .post('/api/bracket')
+      .send({ type: 'single' });
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('id');
   });
 
   it('GET /api/scores/:room should return scores', async () => {

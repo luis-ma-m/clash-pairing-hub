@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { registerAnalyticsRoutes } from './analytics';
+import { generateEliminationBracket, updateBracketWithResults } from './pairing/bracket';
 
 const app = express();
 app.use(cors());
@@ -68,6 +69,10 @@ const userSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   role: z.string(),
+});
+
+const bracketSchema = z.object({
+  type: z.enum(['single', 'double']),
 });
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
@@ -168,6 +173,31 @@ app.post('/api/pairings', async (req, res) => {
   res.status(201).json(data);
 });
 
+// ─── Bracket Generation ────────────────────────────────────────────────────
+
+app.post('/api/bracket', async (req, res) => {
+  const parsed = bracketSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+
+  const { data: teams, error: tErr } = await supabase.from('teams').select('*');
+  if (tErr) return res.status(500).json({ error: tErr.message });
+
+  const bracket = generateEliminationBracket(
+    (teams as any[]) || [],
+    parsed.data.type,
+  );
+
+  const { data, error } = await supabase
+    .from('brackets')
+    .insert({ type: parsed.data.type, data: bracket })
+    .select()
+    .single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
+});
+
 app.put('/api/pairings/:id', async (req, res) => {
   const id = Number(req.params.id);
   const parsed = pairingSchema.partial().safeParse(req.body);
@@ -181,6 +211,15 @@ app.put('/api/pairings/:id', async (req, res) => {
     .select()
     .single();
   if (error) return res.status(404).json({ error: error.message });
+
+  if (Object.prototype.hasOwnProperty.call(parsed.data, 'propWins')) {
+    const { data: bracketRec } = await supabase.from('brackets').select('*').single();
+    const { data: allPairings } = await supabase.from('pairings').select('*');
+    if (bracketRec && allPairings) {
+      const updated = updateBracketWithResults(bracketRec.data, allPairings as any[]);
+      await supabase.from('brackets').update({ data: updated }).eq('id', bracketRec.id);
+    }
+  }
   res.json(data);
 });
 
