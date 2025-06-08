@@ -22,7 +22,7 @@ export interface Bracket {
 
 /**
  * Represents the record fetched from Supabase.
- * The `data` field always contains a full Bracket object.
+ * The `data` field always contains a fully-typed Bracket object.
  */
 export interface BracketRecord {
   id: string
@@ -32,7 +32,7 @@ export interface BracketRecord {
 
 /**
  * Hook to fetch the current bracket from Supabase.
- * Returns `bracket: BracketRecord | null`.
+ * Returns `{ bracket: BracketRecord | null }`.
  */
 export function useBracket() {
   const { data } = useQuery<BracketRecord | null>({
@@ -44,14 +44,14 @@ export function useBracket() {
         .single()
 
       if (error) {
-        // If no bracket exists yet, Supabase returns PGRST116
+        // Supabase returns PGRST116 when no record exists
         if (error.code === 'PGRST116') return null
         throw error
       }
 
       return data as BracketRecord
     },
-    // Poll every 5 seconds to pick up new results
+    // Poll every 5 seconds to keep the UI updated
     refetchInterval: 5000,
   })
 
