@@ -7,15 +7,24 @@ export interface ConstraintSettings {
   RoomCapacity: boolean;
 }
 
+export type ConstraintName = keyof ConstraintSettings;
+
+export interface ConstraintRow {
+  name: ConstraintName;
+  enabled: boolean;
+}
+
 export async function loadConstraintSettings(): Promise<ConstraintSettings> {
   try {
     const { data, error } = await supabase
       .from('constraint_settings')
       .select('name, enabled');
     if (error || !data) throw error;
-    const cfg: any = { ...defaultConfig };
-    for (const row of data) cfg[row.name] = row.enabled;
-    return cfg as ConstraintSettings;
+    const cfg: ConstraintSettings = { ...defaultConfig };
+    for (const row of data as ConstraintRow[]) {
+      cfg[row.name] = row.enabled;
+    }
+    return cfg;
   } catch {
     return defaultConfig as ConstraintSettings;
   }
