@@ -7,27 +7,9 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
   return {
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
-  define: {
-    'process.env': {
-      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL
-    }
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-    define: {
-      "process.env": env,
-    },
+    server: { host: "::", port: 8080 },
+    plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+    define: { "process.env": env },
+    resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
   };
 });
