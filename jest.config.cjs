@@ -8,9 +8,14 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
 
+  setupFiles: ['<rootDir>/jest.polyfill.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/server/__tests__/', '/src/components/__tests__/'],
+
+  transformIgnorePatterns: [
+    '/node_modules/(?!(?:@supabase)/)'
+  ],
 
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
 
