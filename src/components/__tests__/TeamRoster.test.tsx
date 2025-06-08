@@ -15,20 +15,20 @@ globalThis.fetch = jest.fn(() =>
   })
 ) as jest.Mock;
 
-const renderComponent = () => {
+const renderComponent = async () => {
   const client = new QueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <TeamRoster />
-    </QueryClientProvider>
-  );
+  await act(async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <TeamRoster />
+      </QueryClientProvider>
+    );
+  });
 };
 
 describe('TeamRoster', () => {
   it('displays teams from API', async () => {
-    await act(async () => {
-      renderComponent();
-    });
+    await renderComponent();
     await waitFor(() => {
       expect(screen.getByText('Alpha')).toBeInTheDocument();
     });
