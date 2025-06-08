@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import request from 'supertest';
 import type { Express } from 'express';
+import server from '../server';
 
 // Mock lowdb so it reads from our JSON fixture and no actual file I/O occurs
 jest.mock('lowdb', () => {
@@ -25,12 +26,7 @@ jest.mock('lowdb/node', () => {
   };
 });
 
-let app: Express;
-
-beforeAll(async () => {
-  const mod = await import('../server.ts');
-  app = mod.default;
-});
+const app: Express = server as Express;
 
 describe('API Endpoints', () => {
   it('GET /api/teams should return teams', async () => {

@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import db, { initDB } from './db.js';
+import db, { initDB } from './db';
 
 // Initialize DB (create file and defaults if needed)
-await initDB();
+initDB();
 
 const app = express();
 app.use(cors());

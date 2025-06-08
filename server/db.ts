@@ -6,10 +6,18 @@ export interface Database {
   debates: any[];
   scores: any[];
   users: any[];
+  currentRound: number;
 }
 
 const file = './server/db.json';
-const defaultData: Database = { teams: [], pairings: [], debates: [], scores: [], users: [] };
+const defaultData: Database = {
+  teams: [],
+  pairings: [],
+  debates: [],
+  scores: [],
+  users: [],
+  currentRound: 1,
+};
 
 let data: Database = { ...defaultData };
 

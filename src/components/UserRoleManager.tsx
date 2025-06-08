@@ -33,6 +33,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('TabDirector');
+  const [open, setOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -105,9 +106,9 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
           <h2 className="text-2xl font-bold">User & Role Management</h2>
           <p className="text-slate-600">Manage access permissions and user roles</p>
         </div>
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => setOpen(true)}>
               <Plus className="h-4 w-4" />
               Add User
             </Button>
@@ -133,7 +134,16 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
                   <SelectItem value="PublicViewer">Public Viewer</SelectItem>
                 </SelectContent>
               </Select>
-              <Button className="w-full" onClick={async () => { await createUser(); setName(''); setEmail(''); setRole('TabDirector'); }}>
+              <Button
+                className="w-full"
+                onClick={async () => {
+                  await createUser();
+                  setName('');
+                  setEmail('');
+                  setRole('TabDirector');
+                  setOpen(false);
+                }}
+              >
                 Create User
               </Button>
             </div>
