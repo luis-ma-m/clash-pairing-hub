@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,40 +9,56 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
 
+type Team = {
+  id: number;
+  name: string;
+  organization: string;
+  speakers: string[];
+  wins: number;
+  losses: number;
+  speakerPoints: number;
+};
+
 const TeamRoster = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const mockTeams = [
-    {
-      id: 1,
-      name: 'Oxford A',
-      organization: 'Oxford University',
-      speakers: ['Alice Johnson', 'Bob Smith', 'Carol White'],
-      wins: 2,
-      losses: 1,
-      speakerPoints: 245.5
-    },
-    {
-      id: 2,
-      name: 'Cambridge A',
-      organization: 'Cambridge University',
-      speakers: ['David Brown', 'Emma Wilson'],
-      wins: 3,
-      losses: 0,
-      speakerPoints: 267.2
-    },
-    {
-      id: 3,
-      name: 'LSE Debaters',
-      organization: 'London School of Economics',
-      speakers: ['Frank Miller', 'Grace Lee', 'Henry Clark', 'Ivy Davis'],
-      wins: 1,
-      losses: 2,
-      speakerPoints: 198.7
-    }
-  ];
+  const [teamName, setTeamName] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [speaker1, setSpeaker1] = useState('');
+  const [speaker2, setSpeaker2] = useState('');
+  const [speaker3, setSpeaker3] = useState('');
 
-  const filteredTeams = mockTeams.filter(team => 
+  const queryClient = useQueryClient();
+
+  const fetchTeams = async () => {
+    const res = await fetch('http://localhost:3001/api/teams');
+    if (!res.ok) throw new Error('Failed fetching teams');
+    return res.json();
+  };
+
+  const { data: teams = [] } = useQuery<Team[]>({ queryKey: ['teams'], queryFn: fetchTeams });
+
+  const addTeam = async () => {
+    const res = await fetch('http://localhost:3001/api/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: teamName,
+        organization,
+        speakers: [speaker1, speaker2, speaker3].filter(Boolean)
+      })
+    });
+    if (!res.ok) throw new Error('Failed to add team');
+    return res.json();
+  };
+
+  const { mutateAsync: createTeam } = useMutation({
+    mutationFn: addTeam,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    }
+  });
+
+  const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     team.organization.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -77,12 +94,24 @@ const TeamRoster = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <Input placeholder="Team Name" />
-                <Input placeholder="Organization" />
-                <Input placeholder="Speaker 1 Name" />
-                <Input placeholder="Speaker 2 Name" />
-                <Input placeholder="Speaker 3 Name (optional)" />
-                <Button className="w-full">Create Team</Button>
+                <Input placeholder="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+                <Input placeholder="Organization" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+                <Input placeholder="Speaker 1 Name" value={speaker1} onChange={(e) => setSpeaker1(e.target.value)} />
+                <Input placeholder="Speaker 2 Name" value={speaker2} onChange={(e) => setSpeaker2(e.target.value)} />
+                <Input placeholder="Speaker 3 Name (optional)" value={speaker3} onChange={(e) => setSpeaker3(e.target.value)} />
+                <Button
+                  className="w-full"
+                  onClick={async () => {
+                    await createTeam();
+                    setTeamName('');
+                    setOrganization('');
+                    setSpeaker1('');
+                    setSpeaker2('');
+                    setSpeaker3('');
+                  }}
+                >
+                  Create Team
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
