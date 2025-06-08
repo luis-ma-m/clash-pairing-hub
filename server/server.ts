@@ -265,6 +265,8 @@ app.delete('/api/pairings/:id', async (req, res) => {
 
 app.post('/api/pairings/swiss', async (req, res) => {
   const round = req.body?.round
+  const rooms = Array.isArray(req.body?.rooms) ? req.body.rooms : []
+  const judges = Array.isArray(req.body?.judges) ? req.body.judges : []
   if (typeof round !== 'number') {
     return res.status(400).json({ error: 'round is required' })
   }
@@ -272,7 +274,10 @@ app.post('/api/pairings/swiss', async (req, res) => {
   const { data: teams, error: tErr } = await supabase.from('teams').select('*')
   if (tErr) return res.status(500).json({ error: tErr.message })
 
-  const pairings = generateSwissPairings(round, teams || [])
+  const { data: prev, error: hErr } = await supabase.from('pairings').select('*')
+  if (hErr) return res.status(500).json({ error: hErr.message })
+
+  const pairings = await generateSwissPairings(round, teams || [], prev || [], [], rooms, judges)
 
   const { data: inserted, error: pErr } = await supabase
     .from('pairings')

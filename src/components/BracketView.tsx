@@ -6,14 +6,24 @@ const BracketView: React.FC = () => {
 
   if (!bracket) return <div>No bracket generated</div>;
 
-  const rounds = bracket.data.rounds || [];
+  interface Match {
+    id: string;
+    team1: string | null;
+    team2: string | null;
+  }
+  interface Round {
+    round: number;
+    matches: Match[];
+  }
+
+  const rounds: Round[] = (bracket.data.rounds || []) as Round[];
 
   return (
     <div className="flex gap-4 overflow-x-auto">
-      {rounds.map((round: any) => (
+      {rounds.map(round => (
         <div key={round.round} className="min-w-[150px]">
           <h3 className="font-semibold mb-2 text-center">Round {round.round}</h3>
-          {round.matches.map((m: any) => (
+          {round.matches.map(m => (
             <div key={m.id} className="border rounded p-2 mb-2 text-sm text-center">
               <div>{m.team1 || 'TBD'}</div>
               <div className="text-xs text-gray-500">vs</div>
