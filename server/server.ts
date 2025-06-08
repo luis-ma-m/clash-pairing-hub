@@ -1,9 +1,25 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const dbFile = path.join(__dirname, 'db.json');
+interface Database { users: any[] }
+
+function readDb(): Database {
+  if (!fs.existsSync(dbFile)) {
+    return { users: [] };
+  }
+  return JSON.parse(fs.readFileSync(dbFile, 'utf-8'));
+}
+
+function writeDb(data: Database) {
+  fs.writeFileSync(dbFile, JSON.stringify(data, null, 2));
+}
 
 const teams = [
   {
@@ -71,6 +87,41 @@ app.get('/api/debates', (req, res) => {
 
 app.get('/api/scores/:room', (req, res) => {
   res.json(scores[req.params.room] || []);
+});
+
+// User management endpoints backed by db.json
+app.get('/api/users', (_req, res) => {
+  const data = readDb();
+  res.json(data.users);
+});
+
+app.post('/api/users', (req, res) => {
+  const data = readDb();
+  const nextId = data.users.length ? Math.max(...data.users.map(u => u.id)) + 1 : 1;
+  const user = { id: nextId, ...req.body };
+  data.users.push(user);
+  writeDb(data);
+  res.status(201).json(user);
+});
+
+app.put('/api/users/:id', (req, res) => {
+  const data = readDb();
+  const id = parseInt(req.params.id, 10);
+  const idx = data.users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ message: 'User not found' });
+  data.users[idx] = { ...data.users[idx], ...req.body, id };
+  writeDb(data);
+  res.json(data.users[idx]);
+});
+
+app.delete('/api/users/:id', (req, res) => {
+  const data = readDb();
+  const id = parseInt(req.params.id, 10);
+  const idx = data.users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ message: 'User not found' });
+  const [deleted] = data.users.splice(idx, 1);
+  writeDb(data);
+  res.json(deleted);
 });
 
 const PORT = process.env.PORT || 3001;

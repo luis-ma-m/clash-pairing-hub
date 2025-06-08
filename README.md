@@ -179,6 +179,20 @@ npm run server
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
 
+### Running Tests
+
+Install dependencies if you haven't already:
+
+```bash
+npm install
+```
+
+Then execute all unit tests:
+
+```bash
+npm test --silent
+```
+
 ## 🎯 Success Criteria
 
 The platform aims to enable tournament administrators to:

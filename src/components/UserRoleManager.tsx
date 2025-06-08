@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/components/ui/sonner';
+import { apiFetch } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,15 +38,19 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const queryClient = useQueryClient();
 
   const fetchUsers = async () => {
-    const res = await fetch('http://localhost:3001/api/users');
+    const res = await apiFetch('/api/users');
     if (!res.ok) throw new Error('Failed fetching users');
     return res.json();
   };
 
-  const { data: users = [] } = useQuery<User[]>({ queryKey: ['users'], queryFn: fetchUsers });
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+    onError: () => toast('Failed to fetch users')
+  });
 
   const addUser = async () => {
-    const res = await fetch('http://localhost:3001/api/users', {
+    const res = await apiFetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, role, lastActive: 'just now', status: 'active', permissions: [] })
@@ -54,7 +60,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   };
 
   const updateUser = async (user: User) => {
-    const res = await fetch(`http://localhost:3001/api/users/${user.id}`, {
+    const res = await apiFetch(`/api/users/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user)
@@ -64,14 +70,26 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   };
 
   const deleteUser = async (id: number) => {
-    const res = await fetch(`http://localhost:3001/api/users/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete user');
     return res.json();
   };
 
-  const { mutateAsync: createUser } = useMutation({ mutationFn: addUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
-  const { mutateAsync: editUser } = useMutation({ mutationFn: updateUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
-  const { mutateAsync: removeUser } = useMutation({ mutationFn: deleteUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) });
+  const { mutateAsync: createUser } = useMutation({
+    mutationFn: addUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to add user')
+  });
+  const { mutateAsync: editUser } = useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to update user')
+  });
+  const { mutateAsync: removeUser } = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: () => toast('Failed to delete user')
+  });
 
   const rolePermissions = {
     SuperAdmin: ['Full system access', 'User management', 'Tournament creation', 'Data export'],
