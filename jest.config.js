@@ -6,10 +6,11 @@ export default {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   globals: {
     'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.test.json'
-    },
-    useESM: true
+      tsconfig: '<rootDir>/tsconfig.test.json',
+      useESM: true
+    }
   }
 };
