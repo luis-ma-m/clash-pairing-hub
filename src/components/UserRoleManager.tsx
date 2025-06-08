@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Shield, Users, Eye } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 type User = {
   id: number;
@@ -36,7 +37,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const queryClient = useQueryClient();
 
   const fetchUsers = async () => {
-    const res = await fetch('http://localhost:3001/api/users');
+    const res = await apiFetch('/api/users');
     if (!res.ok) throw new Error('Failed fetching users');
     return res.json();
   };
@@ -44,7 +45,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   const { data: users = [] } = useQuery<User[]>({ queryKey: ['users'], queryFn: fetchUsers });
 
   const addUser = async () => {
-    const res = await fetch('http://localhost:3001/api/users', {
+    const res = await apiFetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, role, lastActive: 'just now', status: 'active', permissions: [] })
@@ -54,7 +55,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   };
 
   const updateUser = async (user: User) => {
-    const res = await fetch(`http://localhost:3001/api/users/${user.id}`, {
+    const res = await apiFetch(`/api/users/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user)
@@ -64,7 +65,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   };
 
   const deleteUser = async (id: number) => {
-    const res = await fetch(`http://localhost:3001/api/users/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete user');
     return res.json();
   };
