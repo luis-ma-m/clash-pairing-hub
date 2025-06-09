@@ -10,6 +10,8 @@ jest.mock('@/lib/supabase', () => ({
   __esModule: true,
 }))
 
+import SignIn from '../SignIn'
+import SignUp from '../SignUp'
 
 describe.skip('Auth pages configuration checks', () => {
   const ORIGINAL_ENV = process.env
