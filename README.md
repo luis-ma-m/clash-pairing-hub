@@ -140,7 +140,9 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    ```bash
    npm install
    ```
-   Make sure to run this before executing `npm run lint`.
+   This installs **all** required packages, including development
+   dependencies. A full install is necessary before running `npm run lint`
+   or any TypeScript build scripts.
 
 ### Environment Variables
 
