@@ -41,6 +41,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 const teamSchema = z.object({
   name: z.string(),
   organization: z.string(),
+  tournament_id: z.string(),
   speakers: z.array(z.string()),
   wins: z.number().optional(),
   losses: z.number().optional(),
@@ -187,8 +188,13 @@ app.delete('/api/tournaments/:id', async (req, res) => {
 
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
-app.get('/api/teams', checkSupabaseConfig, async (_req, res) => {
-  const { data, error } = await supabase.from('teams').select('*')
+app.get('/api/teams', checkSupabaseConfig, async (req, res) => {
+  const tournamentId = req.query.tournament_id as string | undefined
+  let query = supabase.from('teams').select('*')
+  if (tournamentId) {
+    query = query.eq('tournament_id', tournamentId)
+  }
+  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
 })
@@ -248,10 +254,28 @@ app.delete('/api/teams/:id', async (req, res) => {
 
 // ─── Speakers CRUD ─────────────────────────────────────────────────────────
 
-app.get('/api/speakers', async (_req, res) => {
-  const { data, error } = await supabase.from('speakers').select('*')
+app.get('/api/speakers', async (req, res) => {
+  const teamId = req.query.team_id as string | undefined
+  const tournamentId = req.query.tournament_id as string | undefined
+
+  const { data: speakers, error } = await supabase.from('speakers').select('*')
   if (error) return res.status(500).json({ error: error.message })
-  res.json(data)
+
+  let filtered = speakers as any[]
+
+  if (teamId) {
+    filtered = filtered.filter(s => s.team_id === teamId)
+  } else if (tournamentId) {
+    const { data: teams, error: tErr } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+    if (tErr) return res.status(500).json({ error: tErr.message })
+    const teamIds = new Set((teams as any[]).map(t => t.id))
+    filtered = filtered.filter(s => teamIds.has(s.team_id))
+  }
+
+  res.json(filtered)
 })
 
 app.get('/api/speakers/:id', async (req, res) => {

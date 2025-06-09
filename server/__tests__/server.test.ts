@@ -1,13 +1,18 @@
 /** @jest-environment node */
 import request from 'supertest';
 import type { Express } from 'express';
-import { createClient } from '@supabase/supabase-js';
 import { jest } from '@jest/globals';
 
 // Inline seed data used by the mocked Supabase client
 const seed = {
+  tournaments: [
+    { id: 't1', name: 'Test Tournament', format: 'swiss', status: 'active' }
+  ],
   teams: [
-    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'] }
+    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], tournament_id: 't1' }
+  ],
+  speakers: [
+    { id: 's1', team_id: 1, name: 'A1', position: 1 }
   ],
   pairings: [
     { id: 1, round: 1, room: 'A1', proposition: 'Alpha', opposition: 'Beta', judge: 'Judge', status: 'scheduled', propWins: null }
@@ -90,6 +95,7 @@ jest.mock('@supabase/supabase-js', () => {
 
 let app: Express;
 beforeAll(async () => {
+  jest.resetModules();
   process.env.SUPABASE_URL = 'http://localhost';
   process.env.SUPABASE_ANON_KEY = 'testkey';
   const mod = await import('../server');
@@ -109,10 +115,21 @@ describe('Core API Endpoints', () => {
   });
 
   it('POST /api/teams should create a team', async () => {
-    const team = { name: 'Test Team', organization: 'Test Org', speakers: ['A', 'B'] };
+    const team = {
+      name: 'Test Team',
+      organization: 'Test Org',
+      speakers: ['A', 'B'],
+      tournament_id: 't1'
+    };
     const res = await request(app).post('/api/teams').send(team);
     expect(res.status).toBe(201);
     expect(res.body.name).toBe(team.name);
+  });
+
+  it('GET /api/teams?tournament_id should filter teams', async () => {
+    const res = await request(app).get('/api/teams').query({ tournament_id: 't1' })
+    expect(res.status).toBe(200)
+    expect(res.body.every((t: any) => t.tournament_id === 't1')).toBe(true)
   });
 
   it('GET /api/pairings should return pairings with currentRound', async () => {
@@ -135,6 +152,14 @@ describe('Core API Endpoints', () => {
     const res = await request(app).get('/api/scores/A1');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('GET /api/speakers?team_id should filter speakers', async () => {
+    const res = await request(app)
+      .get('/api/speakers')
+      .query({ team_id: 1 });
+    expect(res.status).toBe(200);
+    expect(res.body.every((s: any) => s.team_id === 1)).toBe(true);
   });
 });
 
