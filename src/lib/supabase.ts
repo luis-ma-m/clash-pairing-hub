@@ -41,6 +41,13 @@ export function hasSupabaseConfig() {
   )
 }
 
+/**
+ * Alias of `hasSupabaseConfig` for clarity when used in components.
+ */
+export function isSupabaseConfigured() {
+  return hasSupabaseConfig()
+}
+
 // Create client even with placeholder values so imports succeed during testing
 const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig()
 export const supabase = createClient(

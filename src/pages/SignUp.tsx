@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { supabase, hasSupabaseConfig } from '@/lib/supabase'
+import { useState } from 'react'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthFallback from '@/components/AuthFallback'
 import {
@@ -18,13 +18,7 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [hasConfig, setHasConfig] = useState(true)
-
-  useEffect(() => {
-    // Evaluate Supabase configuration once on mount. This covers local dev,
-    // production builds, and serverless platforms.
-    setHasConfig(hasSupabaseConfig())
-  }, [])
+  const hasConfig = isSupabaseConfigured()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
