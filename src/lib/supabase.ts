@@ -29,7 +29,7 @@ export function getSupabaseConfig() {
  * Determine if the Supabase configuration appears valid. This is used by the
  * auth pages to decide whether to display the setup instructions.
  */
-export function hasSupabaseConfig() {
+export function isSupabaseConfigured() {
   const { url, anonKey } = getSupabaseConfig()
 
   if (!url || !anonKey) return false
