@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "server": "node --loader ts-node/esm server/server.ts",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs",
-    "create-admin": "node --loader ts-node/esm scripts/createAdmin.ts"
+    "create-admin": "node --loader ts-node/esm scripts/createAdmin.ts",
+    "postinstall": "echo 'Dependencies installed. Run npm test --silent and npm run lint before committing.'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

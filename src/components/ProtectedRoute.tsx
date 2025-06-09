@@ -1,7 +1,7 @@
 
 import { Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { supabase, hasSupabaseConfig } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import DemoMode from './DemoMode'
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   useEffect(() => {
     // Verify Supabase configuration once on mount. If invalid, show demo mode
     // rather than attempting auth calls that will fail.
-    if (!hasSupabaseConfig()) {
+    if (!isSupabaseConfigured()) {
       setHasConfig(false)
       setLoading(false)
       return
