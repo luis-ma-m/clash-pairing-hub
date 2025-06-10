@@ -3,6 +3,7 @@
  */
 import request from 'supertest'
 import type { Express } from 'express'
+import { jest } from '@jest/globals'
 // @ts-expect-error - provided by our Jest mock
 import { __setMockData } from '@supabase/supabase-js'
 
