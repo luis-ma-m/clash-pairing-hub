@@ -6,10 +6,15 @@ import type { Express } from 'express'
 // @ts-expect-error - provided by Jest mock
 import { __setMockData } from '@supabase/supabase-js'
 
-// Inline seed data used by the mocked Supabase client
 const seed = {
+  tournaments: [
+    { id: 't1', name: 'Test Tournament', format: 'swiss', status: 'active' }
+  ],
   teams: [
-    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'] }
+    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], tournament_id: 't1' }
+  ],
+  speakers: [
+    { id: 's1', team_id: 1, name: 'A1', position: 1 }
   ],
   pairings: [
     { id: 1, round: 1, room: 'A1', proposition: 'Alpha', opposition: 'Beta', judge: 'Judge', status: 'scheduled', propWins: null }
@@ -26,9 +31,6 @@ const seed = {
 }
 let data: any = JSON.parse(JSON.stringify(seed))
 
-// Mock Supabase client with a minimal query builder supporting the chained calls
-// used throughout the API routes. Each method returns a Promise-like object so
-// that `await` works as expected while also exposing `eq`, `single` and `select`.
 jest.mock('@supabase/supabase-js', () => {
   const makeThenable = (result: any) => ({
     then: (res: any, rej: any) => Promise.resolve(result).then(res, rej),
@@ -40,27 +42,27 @@ jest.mock('@supabase/supabase-js', () => {
         select: () => {
           const promise: any = makeThenable({ data: data[table], error: null })
           promise.eq = (field: string, value: any) => {
-            const records = data[table].filter((r: any) => r[field] === value)
-            const eqPromise: any = makeThenable({ data: records, error: null })
-            eqPromise.single = () => Promise.resolve({ data: records[0] || null, error: null })
+            const filtered = data[table].filter((r: any) => r[field] === value)
+            const eqPromise: any = makeThenable({ data: filtered, error: null })
+            eqPromise.single = () => Promise.resolve({ data: filtered[0] || null, error: null })
             return eqPromise
           }
           promise.single = () => Promise.resolve({ data: data[table][0] || null, error: null })
           return promise
         },
-        insert: (values: any) => {
-          const arr = Array.isArray(values) ? values : [values]
+        insert: (vals: any) => {
+          const arr = Array.isArray(vals) ? vals : [vals]
           const inserted = arr.map(v => ({ id: Date.now(), ...v }))
           data[table].push(...inserted)
           const promise: any = makeThenable({ data: inserted, error: null })
           promise.single = () => Promise.resolve({ data: inserted[0], error: null })
           return { select: () => promise }
         },
-        update: (values: any) => ({
+        update: (vals: any) => ({
           eq: (field: string, value: any) => {
             const doUpdate = () => {
               const idx = data[table].findIndex((r: any) => r[field] === value)
-              if (idx !== -1) data[table][idx] = { ...data[table][idx], ...values }
+              if (idx !== -1) data[table][idx] = { ...data[table][idx], ...vals }
               return { data: data[table][idx] || null, error: null }
             }
             const promise: any = makeThenable(doUpdate())
@@ -90,6 +92,7 @@ jest.mock('@supabase/supabase-js', () => {
 
 let app: Express
 beforeAll(async () => {
+  jest.resetModules()
   process.env.SUPABASE_URL = 'http://localhost'
   process.env.SUPABASE_ANON_KEY = 'testkey'
   const mod = await import('../server')
@@ -102,21 +105,39 @@ beforeEach(() => {
 })
 
 describe('Core API Endpoints', () => {
-  it('GET /api/teams should return teams', async () => {
+  it('GET /api/teams should return all teams', async () => {
     const res = await request(app).get('/api/teams')
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body)).toBe(true)
     expect(res.body[0]).toHaveProperty('name')
   })
 
-  it('POST /api/teams should create a team', async () => {
-    const team = { name: 'Test Team', organization: 'Test Org', speakers: ['A', 'B'] }
+  it('POST /api/teams should create a team with tournament_id', async () => {
+    const team = {
+      name: 'Bravo',
+      organization: 'Org',
+      speakers: ['B1'],
+      tournament_id: 't1'
+    }
     const res = await request(app).post('/api/teams').send(team)
     expect(res.status).toBe(201)
     expect(res.body.name).toBe(team.name)
+    expect(res.body.tournament_id).toBe('t1')
   })
 
-  it('GET /api/pairings should return pairings with currentRound', async () => {
+  it('GET /api/teams?tournament_id should filter teams', async () => {
+    const res = await request(app).get('/api/teams').query({ tournament_id: 't1' })
+    expect(res.status).toBe(200)
+    expect(res.body.every((t: any) => t.tournament_id === 't1')).toBe(true)
+  })
+
+  it('GET /api/speakers?team_id should filter speakers', async () => {
+    const res = await request(app).get('/api/speakers').query({ team_id: 1 })
+    expect(res.status).toBe(200)
+    expect(res.body.every((s: any) => s.team_id === 1)).toBe(true)
+  })
+
+  it('GET /api/pairings should return pairings and currentRound', async () => {
     const res = await request(app).get('/api/pairings')
     expect(res.status).toBe(200)
     expect(res.body).toHaveProperty('pairings')
@@ -152,14 +173,18 @@ describe('Users CRUD', () => {
   })
 
   it('PUT /api/users/:id should update a user', async () => {
-    const create = await request(app).post('/api/users').send({ name: 'Jane', email: 'jane@example.com', role: 'Judge' })
+    const create = await request(app)
+      .post('/api/users')
+      .send({ name: 'Jane', email: 'jane@example.com', role: 'Judge' })
     const res = await request(app).put(`/api/users/${create.body.id}`).send({ name: 'Jane Updated' })
     expect(res.status).toBe(200)
     expect(res.body.name).toBe('Jane Updated')
   })
 
   it('DELETE /api/users/:id should remove a user', async () => {
-    const create = await request(app).post('/api/users').send({ name: 'Temp', email: 'temp@example.com', role: 'Judge' })
+    const create = await request(app)
+      .post('/api/users')
+      .send({ name: 'Temp', email: 'temp@example.com', role: 'Judge' })
     const res = await request(app).delete(`/api/users/${create.body.id}`)
     expect(res.status).toBe(200)
     expect(res.body.id).toBe(create.body.id)

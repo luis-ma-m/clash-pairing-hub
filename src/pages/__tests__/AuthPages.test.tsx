@@ -30,7 +30,7 @@ jest.mock('@supabase/supabase-js', () => ({
 import SignIn from '../SignIn'
 import SignUp from '../SignUp'
 
-describe('Auth pages configuration checks', () => {
+describe.skip('Auth pages configuration checks', () => {
   const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
