@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { supabase, hasSupabaseConfig } from '@/lib/supabase'
+// src/pages/SignIn.tsx
+import React, { useEffect, useState } from 'react'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthFallback from '@/components/AuthFallback'
 import {
@@ -21,9 +22,8 @@ export default function SignIn() {
   const [hasConfig, setHasConfig] = useState(true)
 
   useEffect(() => {
-    // Evaluate Supabase configuration once on mount. This covers local dev,
-    // production builds, and serverless platforms.
-    setHasConfig(hasSupabaseConfig())
+    // Evaluate Supabase configuration once on mount.
+    setHasConfig(isSupabaseConfigured())
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +33,9 @@ export default function SignIn() {
     else navigate('/')
   }
 
-  if (!hasConfig) return <AuthFallback />
+  if (!hasConfig) {
+    return <AuthFallback />
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

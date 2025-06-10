@@ -140,7 +140,9 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    ```bash
    npm install
    ```
-   Make sure to run this before executing `npm run lint`.
+   This installs **all** required packages, including development
+   dependencies. A full install is necessary before running `npm run lint`
+   or any TypeScript build scripts.
 
 ### Environment Variables
 
@@ -168,9 +170,10 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 1. Sign in to [Supabase](https://supabase.com) and create a new project.
 2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
 3. Paste those values into the corresponding variables in your `.env` file as shown above.
-4. Ensure these variables are available when starting the API server or the frontend. The backend will exit with an error if `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing.
+4. These variables must be present when starting the API server or building the frontend. The server reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` exclusively – they will **not** be injected into the browser unless the same values are duplicated using the `VITE_` prefix.
 5. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
-6. The login and signup pages also depend on `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. If these variables are missing, you'll see a setup prompt (the `AuthFallback` component) instead of the forms.
+6. The login and signup pages require `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to be set in `.env`. If either variable is missing or contains placeholder text, the app displays a “Setup Required” screen (the `AuthFallback` component) instead of the forms.
+7. When deploying to platforms like **Vercel** or **Netlify**, add these environment variables in the platform dashboard and redeploy the application so the build picks them up.
 
 ### Creating the Admin User
 

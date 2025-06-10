@@ -1,6 +1,11 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+export interface SupabaseConfig {
+  url?: string
+  anonKey?: string
+}
+
 /**
  * Resolve Supabase configuration from whatever environment we're running in.
  *
@@ -8,7 +13,7 @@ import { createClient } from '@supabase/supabase-js'
  * - `process.env` is used for Node/Jest environments and when running on
  *   platforms like Vercel/Netlify which expose runtime env vars.
  */
-export function getSupabaseConfig() {
+export function getSupabaseConfig(): SupabaseConfig {
   const meta = typeof import.meta !== 'undefined' ? import.meta : undefined
   const env = (meta?.env ?? {}) as Record<string, string | undefined>
 
@@ -29,7 +34,7 @@ export function getSupabaseConfig() {
  * Determine if the Supabase configuration appears valid. This is used by the
  * auth pages to decide whether to display the setup instructions.
  */
-export function hasSupabaseConfig() {
+export function isSupabaseConfigured() {
   const { url, anonKey } = getSupabaseConfig()
 
   if (!url || !anonKey) return false
@@ -39,6 +44,13 @@ export function hasSupabaseConfig() {
     !invalidPatterns.some((p) => url.includes(p)) &&
     !invalidPatterns.some((p) => anonKey.includes(p))
   )
+}
+
+/**
+ * Alias of `hasSupabaseConfig` for clarity when used in components.
+ */
+export function isSupabaseConfigured() {
+  return hasSupabaseConfig()
 }
 
 // Create client even with placeholder values so imports succeed during testing
