@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { registerAnalyticsRoutes } from './analytics'
 import { generateEliminationBracket, updateBracketWithResults } from './pairing/bracket'
 import { generateSwissPairings } from './pairing/swiss'
+import { getSupabaseConfig, hasSupabaseConfig } from '../src/lib/supabase'
 
 const app = express()
 app.use(cors())
@@ -13,24 +14,18 @@ app.use(express.json())
 
 // ─── Supabase Client ───────────────────────────────────────────────────────
 
-let SUPABASE_URL = process.env.SUPABASE_URL as string | undefined
-let SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string | undefined
-let isSupabaseConfigured = true
+let { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig()
+let isSupabaseConfigured = hasSupabaseConfig()
 
-if (
-  !SUPABASE_URL ||
-  !SUPABASE_ANON_KEY ||
-  SUPABASE_URL.includes('placeholder') ||
-  SUPABASE_ANON_KEY.includes('placeholder')
-) {
+if (!isSupabaseConfigured) {
   if (process.env.NODE_ENV === 'test') {
     SUPABASE_URL = 'http://localhost'
     SUPABASE_ANON_KEY = 'anon'
+    isSupabaseConfigured = true
   } else {
     console.warn('⚠️  Supabase not configured - API will return mock data')
-    isSupabaseConfigured = false
-    SUPABASE_URL = 'https://placeholder.supabase.co'
-    SUPABASE_ANON_KEY = 'placeholder-key'
+    SUPABASE_URL = SUPABASE_URL || 'https://placeholder.supabase.co'
+    SUPABASE_ANON_KEY = SUPABASE_ANON_KEY || 'placeholder-key'
   }
 }
 

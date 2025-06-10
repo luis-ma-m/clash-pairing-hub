@@ -53,12 +53,9 @@ jest.mock('@supabase/supabase-js', () => {
           const arr = Array.isArray(values) ? values : [values];
           const inserted = arr.map(v => ({ id: Date.now(), ...v }));
           data[table].push(...inserted);
-          return {
-            select: () => ({
-              single: () =>
-                Promise.resolve({ data: inserted[0], error: null }),
-            }),
-          };
+          const promise: any = makeThenable({ data: inserted, error: null });
+          promise.single = () => Promise.resolve({ data: inserted[0], error: null });
+          return { select: () => promise };
         },
         update: (values: any) => ({
           eq: (field: string, value: any) => {
@@ -68,7 +65,11 @@ jest.mock('@supabase/supabase-js', () => {
               return { data: data[table][idx] || null, error: null };
             };
             const promise: any = makeThenable(doUpdate());
-            promise.select = () => ({ single: () => Promise.resolve(doUpdate()) });
+            promise.select = () => {
+              const p: any = makeThenable(doUpdate());
+              p.single = () => Promise.resolve(doUpdate());
+              return p;
+            };
             return promise;
           },
         }),
