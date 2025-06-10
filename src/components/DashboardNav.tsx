@@ -19,6 +19,7 @@ interface DashboardNavProps {
     name: string;
     format: string;
     status: string;
+    settings?: Record<string, unknown>;
   };
 }
 

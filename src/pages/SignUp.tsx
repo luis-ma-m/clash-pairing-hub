@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+// src/pages/SignUp.tsx
+import React, { useEffect, useState } from 'react'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthFallback from '@/components/AuthFallback'
 import {
@@ -18,32 +19,27 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [hasSupabaseConfig, setHasSupabaseConfig] = useState(true)
+  const [hasConfig, setHasConfig] = useState(true)
 
   useEffect(() => {
-    const supabaseUrl =
-      import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
-    const supabaseKey =
-      import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-
-    if (
-      !supabaseUrl ||
-      !supabaseKey ||
-      supabaseUrl.includes('your-project') ||
-      supabaseKey.includes('your-anon-key')
-    ) {
-      setHasSupabaseConfig(false)
-    }
+    // Evaluate Supabase configuration once on mount.
+    // Covers both local dev and production/static builds.
+    setHasConfig(isSupabaseConfigured())
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const { error } = await supabase.auth.signUp({ email, password })
-    if (error) setError(error.message)
-    else navigate('/')
+    if (error) {
+      setError(error.message)
+    } else {
+      navigate('/')
+    }
   }
 
-  if (!hasSupabaseConfig) return <AuthFallback />
+  if (!hasConfig) {
+    return <AuthFallback />
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
