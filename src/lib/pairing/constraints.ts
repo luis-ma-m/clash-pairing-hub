@@ -1,4 +1,5 @@
 export type Pairing = {
+  tournament_id?: string
   round: number;
   room: string;
   proposition: string;

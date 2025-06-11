@@ -57,6 +57,7 @@ const roundSchema = z.object({
 })
 
 const pairingSchema = z.object({
+  tournament_id: z.string(),
   round: z.number(),
   room: z.string(),
   proposition: z.string(),
@@ -103,6 +104,7 @@ const tournamentSchema = z.object({
 
 const bracketSchema = z.object({
   type: z.enum(['single', 'double']),
+  tournament_id: z.string(),
 })
 
 // ─── Middleware to check Supabase configuration ────────────────────────────
@@ -453,8 +455,11 @@ app.get('/api/tournament/stats', async (_req, res) => {
 
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
 
-app.get('/api/pairings', async (_req, res) => {
-  const { data: pairings, error: pErr } = await supabase.from('pairings').select('*')
+app.get('/api/pairings', async (req, res) => {
+  const tournamentId = req.query.tournament_id as string | undefined
+  let pairingQuery = supabase.from('pairings').select('*')
+  if (tournamentId) pairingQuery = pairingQuery.eq('tournament_id', tournamentId)
+  const { data: pairings, error: pErr } = await pairingQuery
   const { data: setting, error: sErr } = await supabase.from('settings').select('currentRound').single()
   if (pErr || sErr) {
     const msg = pErr?.message || sErr?.message
@@ -496,14 +501,17 @@ app.post('/api/bracket', async (req, res) => {
     return res.status(400).json({ error: 'Invalid request body' })
   }
 
-  const { data: teams, error: tErr } = await supabase.from('teams').select('*')
+  const { data: teams, error: tErr } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('tournament_id', parsed.data.tournament_id)
   if (tErr) return res.status(500).json({ error: tErr.message })
 
   const bracket = generateEliminationBracket((teams as any[]) || [], parsed.data.type)
 
   const { data, error } = await supabase
     .from('brackets')
-    .insert({ type: parsed.data.type, data: bracket })
+    .insert({ type: parsed.data.type, tournament_id: parsed.data.tournament_id, data: bracket })
     .select()
     .single()
   if (error) return res.status(400).json({ error: error.message })
@@ -525,8 +533,15 @@ app.put('/api/pairings/:id', async (req, res) => {
   if (error) return res.status(404).json({ error: error.message })
 
   if (Object.prototype.hasOwnProperty.call(parsed.data, 'propWins')) {
-    const { data: bracketRec } = await supabase.from('brackets').select('*').single()
-    const { data: allPairings } = await supabase.from('pairings').select('*')
+    const { data: bracketRec } = await supabase
+      .from('brackets')
+      .select('*')
+      .eq('tournament_id', data.tournament_id)
+      .single()
+    const { data: allPairings } = await supabase
+      .from('pairings')
+      .select('*')
+      .eq('tournament_id', data.tournament_id)
     if (bracketRec && allPairings) {
       const updated = updateBracketWithResults(bracketRec.data, allPairings as any[])
       await supabase.from('brackets').update({ data: updated }).eq('id', bracketRec.id)
@@ -553,17 +568,36 @@ app.post('/api/pairings/swiss', async (req, res) => {
   const round = req.body?.round
   const rooms = Array.isArray(req.body?.rooms) ? req.body.rooms : []
   const judges = Array.isArray(req.body?.judges) ? req.body.judges : []
+  const tournamentId = req.body?.tournament_id
   if (typeof round !== 'number') {
     return res.status(400).json({ error: 'round is required' })
   }
 
-  const { data: teams, error: tErr } = await supabase.from('teams').select('*')
+  if (!tournamentId) {
+    return res.status(400).json({ error: 'tournament_id is required' })
+  }
+
+  const { data: teams, error: tErr } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('tournament_id', tournamentId)
   if (tErr) return res.status(500).json({ error: tErr.message })
 
-  const { data: prev, error: hErr } = await supabase.from('pairings').select('*')
+  const { data: prev, error: hErr } = await supabase
+    .from('pairings')
+    .select('*')
+    .eq('tournament_id', tournamentId)
   if (hErr) return res.status(500).json({ error: hErr.message })
 
-  const pairings = await generateSwissPairings(round, teams || [], prev || [], [], rooms, judges)
+  const pairings = await generateSwissPairings(
+    round,
+    teams || [],
+    prev || [],
+    [],
+    rooms,
+    judges,
+    tournamentId
+  )
 
   const { data: inserted, error: pErr } = await supabase
     .from('pairings')

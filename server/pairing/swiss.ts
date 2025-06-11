@@ -22,6 +22,7 @@ export async function generateSwissPairings(
   constraints: Constraint[] = [],
   rooms: string[] = [],
   judges: string[] = [],
+  tournamentId?: string,
 ): Promise<Pairing[]> {
   const settings = await loadConstraintSettings();
   const active = constraints.filter(c => settings[c.type as keyof typeof settings]);
@@ -46,6 +47,7 @@ export async function generateSwissPairings(
       judge: judges[i / 2] || 'TBD',
       status: 'scheduled',
       propWins: null,
+      tournament_id: tournamentId,
     });
   }
   const context: ConstraintContext = { previousPairings, roomList: rooms };

@@ -18,7 +18,7 @@ const seed = {
     { id: 's1', team_id: 1, name: 'A1', position: 1 }
   ],
   pairings: [
-    { id: 1, round: 1, room: 'A1', proposition: 'Alpha', opposition: 'Beta', judge: 'Judge', status: 'scheduled', propWins: null }
+    { id: 1, round: 1, room: 'A1', proposition: 'Alpha', opposition: 'Beta', judge: 'Judge', status: 'scheduled', propWins: null, tournament_id: 't1' }
   ],
   scores: [
     { id: 1, room: 'A1', speaker: 'A1', team: 'Alpha', total: 75 }
@@ -155,7 +155,9 @@ describe('Core API Endpoints', () => {
   });
 
   it('POST /api/bracket should generate a bracket', async () => {
-    const res = await request(app).post('/api/bracket').send({ type: 'single' });
+    const res = await request(app)
+      .post('/api/bracket')
+      .send({ type: 'single', tournament_id: 't1' });
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('id');
   });
