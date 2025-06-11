@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 
 export type Pairing = {
   id: number;
+  tournament_id: string;
   round: number;
   room: string;
   proposition: string;
@@ -40,7 +41,7 @@ export function usePairings(tournamentId?: string) {
       const res = await fetch('/api/pairings/swiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round, rooms, judges }),
+        body: JSON.stringify({ round, rooms, judges, tournament_id: tournamentId }),
       })
       if (!res.ok) throw new Error('Failed to generate pairings');
       return res.json();
