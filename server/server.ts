@@ -7,7 +7,12 @@ import { z } from 'zod'
 import { registerAnalyticsRoutes } from './analytics'
 import { generateEliminationBracket, updateBracketWithResults } from './pairing/bracket'
 import { generateSwissPairings } from './pairing/swiss'
-import { getSupabaseConfig, hasSupabaseConfig } from '../src/lib/supabase'
+import {
+  getSupabaseConfig,
+  hasSupabaseConfig,
+  DEFAULT_SUPABASE_URL,
+  DEFAULT_SUPABASE_ANON_KEY
+} from '../src/lib/supabase'
 
 const app = express()
 app.use(cors())
@@ -25,8 +30,8 @@ if (!isSupabaseConfigured) {
     isSupabaseConfigured = true
   } else {
     console.warn('⚠️  Supabase not configured - API will return mock data')
-    SUPABASE_URL = SUPABASE_URL || 'https://placeholder.supabase.co'
-    SUPABASE_ANON_KEY = SUPABASE_ANON_KEY || 'placeholder-key'
+    SUPABASE_URL = SUPABASE_URL || DEFAULT_SUPABASE_URL
+    SUPABASE_ANON_KEY = SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
   }
 }
 
