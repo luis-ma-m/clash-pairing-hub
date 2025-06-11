@@ -15,6 +15,7 @@ type Team = {
   id: number;
   name: string;
   organization: string;
+  tournament_id: string;
   speakers: string[];
   wins: number;
   losses: number;
@@ -57,7 +58,13 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
     if (validSpeakers.length > 5) {
       throw new Error('Cannot add more than 5 speakers');
     }
-    await addTeam({ name: teamName, organization, speakers: validSpeakers });
+    if (!tournamentId) throw new Error('No active tournament');
+    await addTeam({
+      name: teamName,
+      organization,
+      speakers: validSpeakers,
+      tournament_id: tournamentId,
+    });
   };
 
   const editTeam = async (payload: { id: number; updates: Partial<Team> }) => {
@@ -89,8 +96,9 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
     if (!file) return;
     const text = await file.text();
     const parsed = parseTeamsCsv(text);
+    if (!tournamentId) throw new Error('No active tournament');
     for (const team of parsed) {
-      await addTeam(team);
+      await addTeam({ ...team, tournament_id: tournamentId });
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };

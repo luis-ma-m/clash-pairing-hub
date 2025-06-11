@@ -4,8 +4,8 @@
  */
 import { hasSupabaseConfig } from '../supabase'
 
-interface MutableImportMeta {
-  env: Record<string, any>
+interface MutableImportMeta extends ImportMeta {
+  env: Record<string, string | undefined>
 }
 
 const importMeta = import.meta as unknown as MutableImportMeta
@@ -25,7 +25,7 @@ describe('hasSupabaseConfig', () => {
 
   afterEach(() => {
     // Restore originals
-    importMeta.env = originalImportMetaEnv
+    importMeta.env = { ...originalImportMetaEnv }
     process.env = { ...originalProcessEnv }
   })
 
