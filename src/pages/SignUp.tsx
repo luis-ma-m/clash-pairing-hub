@@ -17,6 +17,7 @@ import { UserPlus } from 'lucide-react'
 export default function SignUp() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [hasConfig, setHasConfig] = useState(true)
@@ -29,10 +30,16 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       setError(error.message)
     } else {
+      const userId = data.user?.id
+      if (userId) {
+        await supabase
+          .from('users')
+          .upsert({ id: userId, email, name, role: 'user' })
+      }
       navigate('/')
     }
   }
@@ -59,6 +66,12 @@ export default function SignUp() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <Input
               type="password"

@@ -1,5 +1,5 @@
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 // Default connection details for the shared Supabase project. These are used
 // whenever the environment variables are not provided.
@@ -68,5 +68,22 @@ export const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 )
+
+// ─── Service Role Client (Server Only) ───────────────────────────────────────
+
+let supabaseAdmin: SupabaseClient | null = null
+
+/**
+ * Obtain a Supabase client configured with the service role key. This should
+ * only be used in secure server-side environments.
+ */
+export function getSupabaseAdminClient(): SupabaseClient | null {
+  if (supabaseAdmin) return supabaseAdmin
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  supabaseAdmin = createClient(url, key)
+  return supabaseAdmin
+}
 
 export default supabase
