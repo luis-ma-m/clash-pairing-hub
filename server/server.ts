@@ -181,6 +181,75 @@ app.delete('/api/tournaments/:id', async (req, res) => {
   res.json(data)
 })
 
+// ─── Tournament Stats ──────────────────────────────────────────────────────
+
+app.get('/api/tournament/stats', async (_req, res) => {
+  const { data: setting, error: sErr } = await supabase
+    .from('settings')
+    .select('currentRound')
+    .single()
+  const { data: teams, error: tErr } = await supabase.from('teams').select('*')
+  const { data: pairings, error: pErr } = await supabase
+    .from('pairings')
+    .select('*')
+  const { data: scores, error: scErr } = await supabase.from('scores').select('*')
+
+  if (sErr || tErr || pErr || scErr) {
+    const msg = sErr?.message || tErr?.message || pErr?.message || scErr?.message
+    return res.status(500).json({ error: msg })
+  }
+
+  const currentRound = setting?.currentRound ?? 1
+  const totalRounds = pairings?.reduce((m, p) => Math.max(m, p.round), 0) ?? 0
+
+  const totalDebates = pairings?.length ?? 0
+  const avgSpeakerScore = scores && scores.length
+    ? scores.reduce((sum, s) => sum + (s.total || 0), 0) / scores.length
+    : 0
+  const activeTeams = teams?.length ?? 0
+
+  const map = new Map<string, { wins: number; speaker: number }>()
+  teams?.forEach(t => map.set(t.name, { wins: 0, speaker: 0 }))
+  pairings?.forEach(p => {
+    if (p.status === 'completed') {
+      const prop = map.get(p.proposition)
+      const opp = map.get(p.opposition)
+      if (prop && opp) {
+        if (p.propWins) {
+          prop.wins++
+        } else if (p.propWins === false) {
+          opp.wins++
+        }
+      }
+    }
+  })
+  scores?.forEach(s => {
+    const e = map.get(s.team)
+    if (e) e.speaker += s.total || 0
+  })
+
+  const standings = Array.from(map.entries()).map(([team, stat]) => ({
+    team,
+    wins: stat.wins,
+    speakerPoints: stat.speaker,
+  }))
+  standings.sort(
+    (a, b) => b.wins - a.wins || b.speakerPoints - a.speakerPoints
+  )
+  const currentLeader = standings[0]?.team ?? '-'
+
+  res.json({
+    currentRound,
+    totalRounds,
+    quickStats: {
+      totalDebates,
+      avgSpeakerScore,
+      activeTeams,
+      currentLeader,
+    },
+  })
+})
+
 // ─── Teams CRUD ────────────────────────────────────────────────────────────
 
 app.get('/api/teams', checkSupabaseConfig, async (req, res) => {

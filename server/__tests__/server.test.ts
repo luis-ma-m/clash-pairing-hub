@@ -93,7 +93,6 @@ jest.mock('@supabase/supabase-js', () => {
 
 let app: Express
 beforeAll(async () => {
-  jest.resetModules()
   process.env.SUPABASE_URL = 'http://localhost'
   process.env.SUPABASE_ANON_KEY = 'testkey'
   const mod = await import('../server')
@@ -156,6 +155,48 @@ describe('Core API Endpoints', () => {
     const res = await request(app).get('/api/scores/A1')
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body)).toBe(true)
+  })
+})
+
+describe('Tournaments CRUD', () => {
+  it('GET /api/tournaments returns tournaments', async () => {
+    const res = await request(app).get('/api/tournaments')
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body)).toBe(true)
+    expect(res.body[0].name).toBe('Test Tournament')
+  })
+
+  it('POST /api/tournaments creates a tournament', async () => {
+    const tourney = { name: 'New T', format: 'swiss' }
+    const res = await request(app).post('/api/tournaments').send(tourney)
+    expect(res.status).toBe(201)
+    expect(res.body.name).toBe('New T')
+  })
+
+  it('PUT /api/tournaments/:id updates a tournament', async () => {
+    const res = await request(app)
+      .put('/api/tournaments/t1')
+      .send({ name: 'Updated' })
+    expect(res.status).toBe(200)
+    expect(res.body.name).toBe('Updated')
+  })
+
+  it('DELETE /api/tournaments/:id removes a tournament', async () => {
+    const res = await request(app).delete('/api/tournaments/t1')
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('t1')
+  })
+})
+
+describe('Tournament stats', () => {
+  it('GET /api/tournament/stats returns overview', async () => {
+    const res = await request(app).get('/api/tournament/stats')
+    expect(res.status).toBe(200)
+    expect(res.body.currentRound).toBe(1)
+    expect(res.body.totalRounds).toBe(1)
+    expect(res.body.quickStats.totalDebates).toBe(1)
+    expect(res.body.quickStats.activeTeams).toBe(1)
+    expect(res.body.quickStats.currentLeader).toBe('Alpha')
   })
 })
 
