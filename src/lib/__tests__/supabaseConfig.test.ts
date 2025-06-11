@@ -1,9 +1,17 @@
 // src/lib/supabase/hasConfig.test.ts
+/**
+ * @jest-environment node
+ */
 import { hasSupabaseConfig } from '../supabase'
+
+interface MutableImportMeta extends ImportMeta {
+  env: Record<string, string | undefined>
+}
+
+const importMeta = import.meta as unknown as MutableImportMeta
 
 describe('hasSupabaseConfig', () => {
   const originalProcessEnv = { ...process.env }
-  const importMeta = import.meta as unknown as { env: Record<string, string | undefined> }
   const originalImportMetaEnv = { ...importMeta.env }
 
   beforeEach(() => {
