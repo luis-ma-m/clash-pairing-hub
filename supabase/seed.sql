@@ -1,8 +1,16 @@
 -- Seed data for DebateMinistrator
 -- Inserts an admin user placeholder
 
-INSERT INTO public.users (id, email, role, name)
-VALUES ('00000000-0000-0000-0000-000000000001', 'admin@luis.martin', 'admin', 'Admin User')
+INSERT INTO public.users (id, email, role, name, is_active, avatar_url, last_login)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'admin@luis.martin',
+  'admin',
+  'Admin User',
+  true,
+  NULL,
+  NULL
+)
 ON CONFLICT DO NOTHING;
 
 -- Initialize settings with round 1

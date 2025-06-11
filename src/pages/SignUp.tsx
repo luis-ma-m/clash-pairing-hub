@@ -30,7 +30,11 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } }
+    })
     if (error) {
       setError(error.message)
     } else {
@@ -38,7 +42,14 @@ export default function SignUp() {
       if (userId) {
         await supabase
           .from('users')
-          .upsert({ id: userId, email, name, role: 'user' })
+          .upsert({
+            id: userId,
+            email,
+            name,
+            role: 'user',
+            is_active: true,
+            last_login: null,
+          })
       }
       navigate('/')
     }
