@@ -16,6 +16,7 @@ import { Trophy, Users, Shuffle, Target, BarChart3, Settings } from 'lucide-reac
 const Index = () => {
   
   const [activeTournament] = useState({
+    id: 't1',
     name: 'Oxford Invitational 2024',
     format: 'Swiss + Elimination',
     rounds: 4,
@@ -79,7 +80,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="teams">
-            <TeamRoster />
+            <TeamRoster tournamentId={activeTournament.id} />
           </TabsContent>
 
           <TabsContent value="pairings">

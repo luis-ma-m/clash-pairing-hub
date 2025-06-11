@@ -4,38 +4,28 @@ import React from 'react'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import TeamRoster from '../TeamRoster'
-import { supabase } from '@/lib/supabase'
-
-jest.mock('@/lib/supabase', () => ({
-  supabase: { from: jest.fn() },
-  __esModule: true,
-}))
 
 const mockTeams = [
   { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], wins: 0, losses: 0, speakerPoints: 0 },
 ]
 
-const fromMock = jest.fn().mockReturnValue({
-  select: jest.fn().mockResolvedValue({ data: mockTeams, error: null }),
-  insert: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-})
-
-interface SupabaseLike {
-  from: typeof fromMock
-}
-
-// Redirect supabase.from to our mock
-;(supabase as unknown as SupabaseLike).from = fromMock
+// Mock fetch to return our mockTeams
+const fetchMock = jest.fn().mockResolvedValue({
+  ok: true,
+  json: async () => mockTeams,
+  headers: { get: () => 'application/json' },
+  text: async () => JSON.stringify(mockTeams),
+});
 
 // Helper to render the component within QueryClientProvider
 const renderComponent = async () => {
   const client = new QueryClient()
+  // @ts-ignore
+  global.fetch = fetchMock
   await act(async () => {
     render(
       <QueryClientProvider client={client}>
-        <TeamRoster />
+        <TeamRoster tournamentId="t1" />
       </QueryClientProvider>
     )
   })
@@ -45,8 +35,7 @@ describe('TeamRoster', () => {
   it('queries the teams table and renders fetched teams', async () => {
     await renderComponent()
 
-    // Ensure we called supabase.from('teams')
-    expect(fromMock).toHaveBeenCalledWith('teams')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/api/teams?tournament_id=t1')
 
     // Wait for our mock data to appear in the DOM
     await waitFor(() => {

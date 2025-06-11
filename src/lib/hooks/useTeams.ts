@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { apiFetch, expectJson } from '../api';
 
 export type Team = {
   id: number;
@@ -11,15 +12,16 @@ export type Team = {
   speakerPoints: number;
 };
 
-export function useTeams() {
+export function useTeams(tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data: teams } = useQuery<Team[]>({
-    queryKey: ['teams'],
+    queryKey: ['teams', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('teams').select('*');
-      if (error) throw error;
-      return (data as Team[]) || [];
+      const qs = tournamentId ? `?tournament_id=${encodeURIComponent(tournamentId)}` : '';
+      const res = await apiFetch(`/api/teams${qs}`);
+      if (!res.ok) throw new Error('Failed fetching teams');
+      return expectJson<Team[]>(res);
     },
   });
 
