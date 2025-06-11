@@ -1,4 +1,7 @@
 // src/lib/supabase/hasConfig.test.ts
+/**
+ * @jest-environment node
+ */
 import { hasSupabaseConfig } from '../supabase'
 
 interface MutableImportMeta extends ImportMeta {
