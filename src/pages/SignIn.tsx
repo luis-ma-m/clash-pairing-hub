@@ -38,8 +38,14 @@ export default function SignIn() {
     if (userId) {
       await supabase
         .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', userId)
+        .upsert({
+          id: userId,
+          email,
+          name: data.user.user_metadata?.name ?? null,
+          role: 'user',
+          is_active: true,
+          last_login: new Date().toISOString(),
+        })
     }
     navigate('/')
   }
