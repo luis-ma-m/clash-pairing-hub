@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { apiFetch, expectJson } from '../api';
 
 export interface Speaker {
   id: string;
@@ -8,17 +9,19 @@ export interface Speaker {
   position: number | null;
 }
 
-export function useSpeakers(teamId?: string) {
+export function useSpeakers(teamId?: string, tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery<Speaker[]>({
-    queryKey: ['speakers', teamId],
+    queryKey: ['speakers', teamId, tournamentId],
     queryFn: async () => {
-      let query = supabase.from('speakers').select('*');
-      if (teamId) query = query.eq('team_id', teamId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as Speaker[]) || [];
+      const params = new URLSearchParams();
+      if (teamId) params.set('team_id', teamId);
+      if (!teamId && tournamentId) params.set('tournament_id', tournamentId);
+      const qs = params.toString();
+      const res = await apiFetch(`/api/speakers${qs ? `?${qs}` : ''}`);
+      if (!res.ok) throw new Error('Failed fetching speakers');
+      return expectJson<Speaker[]>(res);
     },
   });
 
