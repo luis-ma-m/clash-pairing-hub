@@ -4,8 +4,8 @@
  */
 import { hasSupabaseConfig } from '../supabase'
 
-interface MutableImportMeta extends ImportMeta {
-  env: Record<string, string | undefined>
+interface MutableImportMeta {
+  env: Record<string, any>
 }
 
 const importMeta = import.meta as unknown as MutableImportMeta

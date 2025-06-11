@@ -675,8 +675,13 @@ app.delete('/api/rounds/:id', async (req, res) => {
 
 // ─── Debates CRUD ──────────────────────────────────────────────────────────
 
-app.get('/api/debates', async (_req, res) => {
-  const { data, error } = await supabase.from('debates').select('*')
+app.get('/api/debates', async (req, res) => {
+  const tournamentId = req.query.tournament_id as string | undefined
+  let query = supabase.from('debates').select('*')
+  if (tournamentId) {
+    query = query.eq('tournament_id', tournamentId)
+  }
+  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
 })
@@ -737,10 +742,15 @@ app.delete('/api/debates/:id', async (req, res) => {
 // ─── Scores CRUD ───────────────────────────────────────────────────────────
 
 app.get('/api/scores/:room', async (req, res) => {
-  const { data, error } = await supabase
+  const tournamentId = req.query.tournament_id as string | undefined
+  let query = supabase
     .from('scores')
     .select('*')
     .eq('room', req.params.room)
+  if (tournamentId) {
+    query = query.eq('tournament_id', tournamentId)
+  }
+  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
 })

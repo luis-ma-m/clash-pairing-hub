@@ -30,15 +30,15 @@ const ScoringInterface = ({ tournamentId }: ScoringInterfaceProps) => {
   const [oppPoints, setOppPoints] = useState(0);
   const [oppMargin, setOppMargin] = useState(0);
 
-  const { debates } = useDebates();
-  const { speakerScores } = useSpeakerScores(selectedDebate);
+  const { debates } = useDebates(tournamentId);
+  const { speakerScores } = useSpeakerScores(selectedDebate, tournamentId);
 
   useEffect(() => {
     setScoresData(speakerScores);
   }, [speakerScores]);
 
-  const { mutate: submitScores } = useSubmitSpeakerScores(selectedDebate);
-  const { mutate: submitTeamScores } = useSubmitTeamScores(selectedDebate);
+  const { mutate: submitScores } = useSubmitSpeakerScores(selectedDebate, tournamentId);
+  const { mutate: submitTeamScores } = useSubmitTeamScores(selectedDebate, tournamentId);
 
   const handleSubmit = () => {
     const valid = scoresData.every(
