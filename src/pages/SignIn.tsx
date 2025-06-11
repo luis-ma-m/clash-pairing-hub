@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthFallback from '@/components/AuthFallback'
+import { loginDemo } from '@/lib/demoAuth'
 import {
   Card,
   CardContent,
@@ -34,7 +35,24 @@ export default function SignIn() {
   }
 
   if (!hasConfig) {
-    return <AuthFallback />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <Lock className="w-6 h-6 text-blue-600" />
+            </div>
+            <CardTitle>Demo Mode</CardTitle>
+            <CardDescription>Supabase is not configured</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button className="w-full" onClick={() => { loginDemo(); navigate('/'); }}>
+              Enter Demo Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

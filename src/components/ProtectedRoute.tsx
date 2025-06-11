@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import DemoMode from './DemoMode'
+import { isDemoLoggedIn } from '@/lib/demoAuth'
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
   const [loading, setLoading] = useState(true)
@@ -35,7 +36,10 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   }, [])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!hasConfig) return <DemoMode />
+  if (!hasConfig) {
+    if (isDemoLoggedIn()) return children
+    return <DemoMode />
+  }
   if (!session) return <Navigate to="/signin" replace />
   return children
 }
