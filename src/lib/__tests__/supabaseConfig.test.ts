@@ -3,10 +3,12 @@ import { hasSupabaseConfig } from '../supabase'
 
 describe('hasSupabaseConfig', () => {
   const originalProcessEnv = { ...process.env }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const originalImportMetaEnv = { ...(import.meta as any).env }
 
   beforeEach(() => {
     // Clear both Vite and Node envs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(import.meta as any).env = {}
     delete process.env.VITE_SUPABASE_URL
     delete process.env.VITE_SUPABASE_ANON_KEY
@@ -16,11 +18,13 @@ describe('hasSupabaseConfig', () => {
 
   afterEach(() => {
     // Restore originals
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(import.meta as any).env = originalImportMetaEnv
     process.env = { ...originalProcessEnv }
   })
 
   it('returns true when valid VITE_ and Node env values are present', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(import.meta as any).env = {
       VITE_SUPABASE_URL: 'https://proj.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'anonkey'
@@ -36,6 +40,7 @@ describe('hasSupabaseConfig', () => {
   })
 
   it('returns false when env values contain placeholders', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(import.meta as any).env = {
       VITE_SUPABASE_URL: 'https://your-project.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'your-anon-key'

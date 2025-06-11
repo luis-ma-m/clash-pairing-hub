@@ -27,13 +27,19 @@ export function usePairings() {
   const pairings = data ?? [];
   const currentRound = pairings.reduce((m, p) => Math.max(m, p.round), 0);
 
+  interface GeneratePayload {
+    round: number
+    rooms?: string[]
+    judges?: string[]
+  }
+
   const generatePairings = useMutation({
-    mutationFn: async (round: number) => {
+    mutationFn: async ({ round, rooms = [], judges = [] }: GeneratePayload) => {
       const res = await fetch('/api/pairings/swiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round }),
-      });
+        body: JSON.stringify({ round, rooms, judges }),
+      })
       if (!res.ok) throw new Error('Failed to generate pairings');
       return res.json();
     },
