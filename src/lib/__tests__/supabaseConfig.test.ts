@@ -5,7 +5,7 @@
 import { hasSupabaseConfig } from '../supabase'
 
 interface MutableImportMeta extends ImportMeta {
-  env: ImportMetaEnv & Record<string, string | undefined>
+  env: Record<string, string | undefined>
 }
 
 const importMeta = import.meta as unknown as MutableImportMeta
@@ -16,7 +16,7 @@ describe('hasSupabaseConfig', () => {
 
   beforeEach(() => {
     // Clear both Vite and Node envs
-    importMeta.env = {} as any
+    importMeta.env = {}
     delete process.env.VITE_SUPABASE_URL
     delete process.env.VITE_SUPABASE_ANON_KEY
     delete process.env.SUPABASE_URL
@@ -25,7 +25,7 @@ describe('hasSupabaseConfig', () => {
 
   afterEach(() => {
     // Restore originals
-    importMeta.env = originalImportMetaEnv as any
+    importMeta.env = { ...originalImportMetaEnv }
     process.env = { ...originalProcessEnv }
   })
 
@@ -33,7 +33,7 @@ describe('hasSupabaseConfig', () => {
     importMeta.env = {
       VITE_SUPABASE_URL: 'https://proj.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'anonkey'
-    } as any
+    }
     process.env.SUPABASE_URL = 'https://proj.supabase.co'
     process.env.SUPABASE_ANON_KEY = 'anonkey'
 
@@ -48,7 +48,7 @@ describe('hasSupabaseConfig', () => {
     importMeta.env = {
       VITE_SUPABASE_URL: 'https://your-project.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'your-anon-key'
-    } as any
+    }
     process.env.SUPABASE_URL = 'https://your-project.supabase.co'
     process.env.SUPABASE_ANON_KEY = 'your-anon-key'
 

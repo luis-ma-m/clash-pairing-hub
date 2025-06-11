@@ -26,6 +26,7 @@ export interface Bracket {
  */
 export interface BracketRecord {
   id: string
+  tournament_id: string
   type: 'single' | 'double'
   data: Bracket
 }
@@ -34,14 +35,13 @@ export interface BracketRecord {
  * Hook to fetch the current bracket from Supabase.
  * Returns `{ bracket: BracketRecord | null }`.
  */
-export function useBracket() {
+export function useBracket(tournamentId?: string) {
   const { data } = useQuery<BracketRecord | null>({
-    queryKey: ['bracket'],
+    queryKey: ['bracket', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('brackets')
-        .select('*')
-        .single()
+      let query = supabase.from('brackets').select('*')
+      if (tournamentId) query = query.eq('tournament_id', tournamentId)
+      const { data, error } = await query.single()
 
       if (error) {
         // Supabase returns PGRST116 when no record exists
