@@ -4,8 +4,8 @@
 import request from 'supertest';
 import type { Express } from 'express';
 import { jest } from '@jest/globals';
-// @ts-expect-error - provided by Jest mock
-import { __setMockData } from '@supabase/supabase-js';
+// Mock implementation will define this variable
+let __setMockData: (d: any) => void;
 
 const seed = {
   tournaments: [
@@ -32,6 +32,9 @@ const seed = {
 };
 
 let data: any = JSON.parse(JSON.stringify(seed));
+__setMockData = (d: any) => {
+  data = d;
+};
 
 jest.mock('@supabase/supabase-js', () => {
   const makeThenable = (result: any) => ({
@@ -39,6 +42,7 @@ jest.mock('@supabase/supabase-js', () => {
   });
 
   return {
+    __esModule: true,
     createClient: () => ({
       from: (table: string) => ({
         select: () => {
@@ -88,7 +92,10 @@ jest.mock('@supabase/supabase-js', () => {
           })
         })
       })
-    })
+    }),
+    __setMockData: (d: any) => {
+      data = d;
+    }
   };
 });
 

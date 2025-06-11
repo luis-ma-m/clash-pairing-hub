@@ -18,7 +18,11 @@ import {
 } from "@/lib/hooks/useScoring";
 
 
-const ScoringInterface = () => {
+interface ScoringInterfaceProps {
+  tournamentId?: string;
+}
+
+const ScoringInterface = ({ tournamentId }: ScoringInterfaceProps) => {
   const [selectedDebate, setSelectedDebate] = useState('');
   const [scoresData, setScoresData] = useState<SpeakerScore[]>([]);
   const [propPoints, setPropPoints] = useState(0);

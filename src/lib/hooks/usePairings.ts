@@ -12,13 +12,15 @@ export type Pairing = {
   propWins: boolean | null;
 };
 
-export function usePairings() {
+export function usePairings(tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery<Pairing[]>({
-    queryKey: ['pairings'],
+    queryKey: ['pairings', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('pairings').select('*');
+      let query = supabase.from('pairings').select('*');
+      if (tournamentId) query = query.eq('tournament_id', tournamentId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data as Pairing[]) || [];
     },
@@ -27,17 +29,23 @@ export function usePairings() {
   const pairings = data ?? [];
   const currentRound = pairings.reduce((m, p) => Math.max(m, p.round), 0);
 
+  interface GeneratePayload {
+    round: number
+    rooms?: string[]
+    judges?: string[]
+  }
+
   const generatePairings = useMutation({
-    mutationFn: async (round: number) => {
+    mutationFn: async ({ round, rooms = [], judges = [] }: GeneratePayload) => {
       const res = await fetch('/api/pairings/swiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round }),
-      });
+        body: JSON.stringify({ round, rooms, judges }),
+      })
       if (!res.ok) throw new Error('Failed to generate pairings');
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings', tournamentId] }),
   });
 
   return { pairings, currentRound, generatePairings: generatePairings.mutateAsync };
