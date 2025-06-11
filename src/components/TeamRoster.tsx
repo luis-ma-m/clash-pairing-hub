@@ -21,7 +21,11 @@ type Team = {
   speakerPoints: number;
 };
 
-const TeamRoster = () => {
+interface TeamRosterProps {
+  tournamentId?: string;
+}
+
+const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [teamName, setTeamName] = useState('');
   const [organization, setOrganization] = useState('');
@@ -44,8 +48,8 @@ const TeamRoster = () => {
     setSpeakers(updated);
   };
 
-  const { teams, addTeam, updateTeam, deleteTeam } = useTeams();
-  const { speakers: speakerList } = useSpeakers();
+  const { teams, addTeam, updateTeam, deleteTeam } = useTeams(tournamentId);
+  const { speakers: speakerList } = useSpeakers(undefined, tournamentId);
 
 
   const createTeam = async () => {
