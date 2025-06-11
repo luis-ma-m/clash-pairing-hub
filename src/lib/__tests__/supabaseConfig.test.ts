@@ -4,7 +4,7 @@
  */
 import { hasSupabaseConfig } from '../supabase'
 
-interface MutableImportMeta extends ImportMeta {
+interface MutableImportMeta extends Omit<ImportMeta, 'env'> {
   env: Record<string, string | undefined>
 }
 
