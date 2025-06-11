@@ -1,11 +1,11 @@
 import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Users, Trophy, Play, Pause, TrendingUp, Target, Trash2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { apiFetch, expectJson } from '@/lib/api';
 import { useTournaments, Tournament } from '@/lib/hooks/useTournaments';
 
@@ -28,10 +28,34 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
     return expectJson(res);
   };
 
+  const queryClient = useQueryClient();
+
   const { data: stats } = useQuery({
     queryKey: ['tournament-stats'],
     queryFn: fetchStats,
     refetchInterval: 5000
+  });
+
+  const startNextRound = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch('/api/pairings/swiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ round: (stats?.currentRound ?? 0) + 1 })
+      });
+      if (!res.ok) throw new Error('Failed to generate pairings');
+      return expectJson(res);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournament-stats'] })
+  });
+
+  const progressRound = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch('/api/rounds/progress', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to progress round');
+      return expectJson(res);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournament-stats'] })
   });
 
   // ─── Derive values for progress bar and quick‐stats cards ────────────────
@@ -106,10 +130,17 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
               <Progress value={progress} className="h-2" />
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => progressRound.mutateAsync()}
+              >
                 <Pause className="h-4 w-4" /> Pause Round
               </Button>
-              <Button className="flex items-center gap-2">
+              <Button
+                className="flex items-center gap-2"
+                onClick={() => startNextRound.mutateAsync()}
+              >
                 <Play className="h-4 w-4" /> Start Next Round
               </Button>
             </div>
