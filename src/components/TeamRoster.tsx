@@ -1,131 +1,200 @@
-
-import { useState, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react';
-import { useTeams } from "@/lib/hooks/useTeams";
-import { useSpeakers } from "@/lib/hooks/useSpeakers";
-import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv";
+// src/components/TeamRoster.tsx
+import React, { useState, useRef } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Plus, Upload, Download, Search, Edit, Trash2 } from 'lucide-react'
+import { useTeams } from "@/lib/hooks/useTeams"
+import { useSpeakers } from "@/lib/hooks/useSpeakers"
+import { parseTeamsCsv, teamsToCsv, type TeamCsv } from "@/lib/csv"
 
 type Team = {
-  id: number;
-  name: string;
-  organization: string;
-  speakers: string[];
-  wins: number;
-  losses: number;
-  speakerPoints: number;
-};
-
-interface TeamRosterProps {
-  tournamentId?: string;
+  id: number
+  name: string
+  organization: string
+  tournament_id: string
+  speakers: string[]
+  wins: number
+  losses: number
+  speakerPoints: number
 }
 
-const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [teamName, setTeamName] = useState('');
-  const [organization, setOrganization] = useState('');
-  const [speakers, setSpeakers] = useState<string[]>(['', '']);
-  const [open, setOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface TeamRosterProps {
+  tournamentId?: string
+}
+
+const TeamRoster: React.FC<TeamRosterProps> = ({ tournamentId }) => {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [teamName, setTeamName] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [speakers, setSpeakers] = useState<string[]>(['', ''])
+  const [open, setOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const addSpeakerField = () => {
-    if (speakers.length >= 5) return;
-    setSpeakers([...speakers, '']);
-  };
+    if (speakers.length >= 5) return
+    setSpeakers([...speakers, ''])
+  }
 
   const removeSpeakerField = (index: number) => {
-    setSpeakers(speakers.filter((_, i) => i !== index));
-  };
+    setSpeakers(speakers.filter((_, i) => i !== index))
+  }
 
   const updateSpeaker = (index: number, value: string) => {
-    const updated = [...speakers];
-    updated[index] = value;
-    setSpeakers(updated);
-  };
+    const updated = [...speakers]
+    updated[index] = value
+    setSpeakers(updated)
+  }
 
-  const { teams, addTeam, updateTeam, deleteTeam } = useTeams(tournamentId);
-  const { speakers: speakerList } = useSpeakers(undefined, tournamentId);
-
+  const { teams, addTeam, updateTeam, deleteTeam } = useTeams(tournamentId)
+  const { speakers: speakerList } = useSpeakers(undefined, tournamentId)
 
   const createTeam = async () => {
-    const validSpeakers = speakers.filter(Boolean);
+    if (!tournamentId) {
+      throw new Error('No active tournament')
+    }
+    const validSpeakers = speakers.filter(Boolean)
+    if (validSpeakers.length < 1) {
+      throw new Error('Team must have at least one speaker')
+    }
     if (validSpeakers.length > 5) {
-      throw new Error('Cannot add more than 5 speakers');
+      throw new Error('Cannot add more than 5 speakers')
     }
     await addTeam({
-      tournament_id: tournamentId ?? '',
       name: teamName,
       organization,
       speakers: validSpeakers,
-    });
-  };
+      tournament_id: tournamentId,
+    })
+  }
 
   const editTeam = async (payload: { id: number; updates: Partial<Team> }) => {
-    await updateTeam(payload);
-  };
+    if (!tournamentId) {
+      throw new Error('No active tournament')
+    }
+    await updateTeam(payload)
+  }
 
   const removeTeam = async (id: number) => {
-    await deleteTeam(id);
-  };
+    if (!tournamentId) {
+      throw new Error('No active tournament')
+    }
+    await deleteTeam(id)
+  }
 
   const handleExport = () => {
-    const data: TeamCsv[] = teams.map(t => ({
-      tournament_id: tournamentId ?? '',
+    if (!tournamentId) {
+      alert('No active tournament for export')
+      return
+    }
+    const dataCsv: TeamCsv[] = teams.map(t => ({
+      tournament_id: tournamentId,
       name: t.name,
       organization: t.organization,
       speakers: t.speakers,
-    }));
-    const csv = teamsToCsv(data);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'teams.csv';
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+    }))
+    const csv = teamsToCsv(dataCsv)
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'teams.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    const parsed = parseTeamsCsv(text);
-    for (const team of parsed) {
-      await addTeam({ ...team, tournament_id: tournamentId ?? team.tournament_id });
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!tournamentId) {
+      alert('No active tournament for import')
+      return
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+    const text = await file.text()
+    let parsed: TeamCsv[]
+    try {
+      parsed = parseTeamsCsv(text)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to parse CSV')
+      return
+    }
+    for (const team of parsed) {
+      // Require tournamentId from context, ignore any tournament_id in CSV
+      const validSpeakers = Array.isArray(team.speakers) ? team.speakers.filter(Boolean) : []
+      if (validSpeakers.length < 1) {
+        // skip invalid
+        continue
+      }
+      if (validSpeakers.length > 5) {
+        // skip or trim
+        validSpeakers.splice(5)
+      }
+      try {
+        await addTeam({
+          name: team.name,
+          organization: team.organization,
+          speakers: validSpeakers,
+          tournament_id: tournamentId,
+        })
+      } catch (err) {
+        console.error('Import error for team', team.name, err)
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     team.organization.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
-  const totalTeams = teams.length;
-  const totalSpeakers = speakerList.length;
-  const averageTeamSize = totalTeams ? (totalSpeakers / totalTeams).toFixed(1) : '0';
+  const totalTeams = teams.length
+  const totalSpeakers = speakerList.length
+  const averageTeamSize = totalTeams
+    ? (totalSpeakers / totalTeams).toFixed(1)
+    : '0'
 
-  let universities = 0;
-  let highSchools = 0;
-  let clubs = 0;
+  let universities = 0
+  let highSchools = 0
+  let clubs = 0
   teams.forEach((t) => {
-    const org = t.organization.toLowerCase();
-    if (org.includes('university')) universities += 1;
-    else if (org.includes('school')) highSchools += 1;
-    else if (org.includes('club')) clubs += 1;
-  });
+    const org = t.organization.toLowerCase()
+    if (org.includes('university')) universities += 1
+    else if (org.includes('school')) highSchools += 1
+    else if (org.includes('club')) clubs += 1
+  })
 
-  const confirmed = teams.length;
-  const pending = 0;
-  const waitlisted = 0;
+  const confirmed = teams.length
+  const pending = 0
+  const waitlisted = 0
 
   return (
     <div className="space-y-6">
+      {/* Header with import/export/add */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Team Management</h2>
@@ -157,7 +226,10 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2" onClick={() => setOpen(true)}>
+              <Button
+                className="flex items-center gap-2"
+                onClick={() => setOpen(true)}
+              >
                 <Plus className="h-4 w-4" />
                 Add Team
               </Button>
@@ -170,14 +242,26 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <Input placeholder="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
-                <Input placeholder="Organization" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+                <Input
+                  placeholder="Team Name"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                />
+                <Input
+                  placeholder="Organization"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                />
                 {speakers.map((spk, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <Input
-                      placeholder={`Speaker ${index + 1} Name${index < 2 ? '' : ' (optional)'}`}
+                      placeholder={`Speaker ${index + 1} Name${
+                        index < 2 ? '' : ' (optional)'
+                      }`}
                       value={spk}
-                      onChange={(e) => updateSpeaker(index, e.target.value)}
+                      onChange={(e) =>
+                        updateSpeaker(index, e.target.value)
+                      }
                     />
                     {speakers.length > 2 && (
                       <Button
@@ -192,33 +276,33 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
                   </div>
                 ))}
                 {speakers.length < 5 && (
-                  <Button type="button" variant="outline" onClick={addSpeakerField}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addSpeakerField}
+                  >
                     Add Speaker
                   </Button>
                 )}
                 <Button
                   className="w-full"
                   onClick={async () => {
-                    // Validate speaker count
-                    const validSpeakers = speakers.filter(Boolean);
-                    if (validSpeakers.length < 1) {
-                      alert('Team must have at least one speaker');
-                      return;
-                    }
-                    if (validSpeakers.length > 5) {
-                      alert('Cannot add more than 5 speakers');
-                      return;
-                    }
                     try {
-                      await createTeam();
-                      setTeamName('');
-                      setOrganization('');
-                      setSpeakers(['', '']);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                      setOpen(false);
+                      await createTeam()
+                      setTeamName('')
+                      setOrganization('')
+                      setSpeakers(['', ''])
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
+                      }
+                      setOpen(false)
                     } catch (err) {
-                      console.error(err);
-                      alert(err instanceof Error ? err.message : 'Failed to create team');
+                      console.error(err)
+                      alert(
+                        err instanceof Error
+                          ? err.message
+                          : 'Failed to create team'
+                      )
                     }
                   }}
                 >
@@ -230,12 +314,15 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
         </div>
       </div>
 
+      {/* Teams Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>Registered Teams</CardTitle>
-              <CardDescription>{filteredTeams.length} teams registered</CardDescription>
+              <CardDescription>
+                {filteredTeams.length} teams registered
+              </CardDescription>
             </div>
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -263,29 +350,56 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
             <TableBody>
               {filteredTeams.map((team) => (
                 <TableRow key={team.id}>
-                  <TableCell className="font-medium">{team.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {team.name}
+                  </TableCell>
                   <TableCell>{team.organization}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {team.speakers.map((speaker, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                      {team.speakers.map((speaker, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {speaker}
                         </Badge>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono">{team.wins}W - {team.losses}L</span>
+                    <span className="font-mono">
+                      {team.wins}W - {team.losses}L
+                    </span>
                   </TableCell>
-                  <TableCell className="font-mono">{team.speakerPoints}</TableCell>
+                  <TableCell className="font-mono">
+                    {team.speakerPoints}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={async () => {
-                          const name = prompt('Team name', team.name);
-                          if (name) await editTeam({ id: team.id, updates: { name } });
+                          const newName = prompt(
+                            'Team name',
+                            team.name
+                          )
+                          if (newName && tournamentId) {
+                            try {
+                              await editTeam({
+                                id: team.id,
+                                updates: { name: newName },
+                              })
+                            } catch (err) {
+                              console.error(err)
+                              alert(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Failed to update team'
+                              )
+                            }
+                          }
                         }}
                       >
                         <Edit className="h-4 w-4" />
@@ -295,7 +409,21 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
                         size="sm"
                         className="text-red-600 hover:text-red-700"
                         onClick={async () => {
-                          if (confirm('Delete team?')) await removeTeam(team.id);
+                          if (
+                            confirm('Delete team?') &&
+                            tournamentId
+                          ) {
+                            try {
+                              await removeTeam(team.id)
+                            } catch (err) {
+                              console.error(err)
+                              alert(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Failed to delete team'
+                              )
+                            }
+                          }
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -309,6 +437,7 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
         </CardContent>
       </Card>
 
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
@@ -362,22 +491,28 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Confirmed</span>
-                <span className="font-semibold text-green-600">{confirmed}</span>
+                <span className="font-semibold text-green-600">
+                  {confirmed}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Pending</span>
-                <span className="font-semibold text-yellow-600">{pending}</span>
+                <span className="font-semibold text-yellow-600">
+                  {pending}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Waitlisted</span>
-                <span className="font-semibold text-slate-600">{waitlisted}</span>
+                <span className="font-semibold text-slate-600">
+                  {waitlisted}
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TeamRoster;
+export default TeamRoster

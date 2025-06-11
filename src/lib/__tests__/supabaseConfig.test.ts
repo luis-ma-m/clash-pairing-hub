@@ -25,7 +25,7 @@ describe('hasSupabaseConfig', () => {
 
   afterEach(() => {
     // Restore originals
-    importMeta.env = originalImportMetaEnv
+    importMeta.env = { ...originalImportMetaEnv }
     process.env = { ...originalProcessEnv }
   })
 
