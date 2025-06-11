@@ -9,9 +9,9 @@ import { __setMockData } from '@supabase/supabase-js'
 
 const seed = {
   teams: [
-    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'] },
-    { id: 2, name: 'Bravo', organization: 'Org', speakers: ['B1'] },
-    { id: 3, name: 'Charlie', organization: 'Org', speakers: ['C1'] }
+    { id: 1, name: 'Alpha', organization: 'Org', speakers: ['A1'], tournament_id: 't1' },
+    { id: 2, name: 'Bravo', organization: 'Org', speakers: ['B1'], tournament_id: 't1' },
+    { id: 3, name: 'Charlie', organization: 'Org', speakers: ['C1'], tournament_id: 't1' }
   ],
   pairings: [],
   scores: [],
@@ -107,7 +107,7 @@ describe('Swiss pairing rounds', () => {
   it('handles odd team counts and updates current round', async () => {
     const res = await request(app)
       .post('/api/pairings/swiss')
-      .send({ round: 2 })
+      .send({ round: 2, tournament_id: 't1' })
 
     expect(res.status).toBe(201)
     expect(Array.isArray(res.body)).toBe(true)
@@ -129,7 +129,8 @@ describe('Round progression', () => {
         opposition: 'Bravo',
         judge: 'J1',
         status: 'scheduled',
-        propWins: null
+        propWins: null,
+        tournament_id: 't1'
       }
     ]
 
@@ -149,7 +150,8 @@ describe('Round progression', () => {
         opposition: 'Bravo',
         judge: 'J1',
         status: 'completed',
-        propWins: true
+        propWins: true,
+        tournament_id: 't1'
       }
     ]
 

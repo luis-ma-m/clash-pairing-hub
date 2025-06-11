@@ -21,11 +21,13 @@ export type SpeakerScore = {
   total: number;
 };
 
-export function useDebates() {
+export function useDebates(tournamentId?: string) {
   const { data } = useQuery<Debate[]>({
-    queryKey: ['debates'],
+    queryKey: ['debates', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('debates').select('*');
+      let query = supabase.from('debates').select('*');
+      if (tournamentId) query = query.eq('tournament_id', tournamentId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data as Debate[]) || [];
     },
@@ -34,15 +36,14 @@ export function useDebates() {
   return { debates: data ?? [] };
 }
 
-export function useSpeakerScores(room: string) {
+export function useSpeakerScores(room: string, tournamentId?: string) {
   const { data } = useQuery<SpeakerScore[]>({
-    queryKey: ['scores', room],
+    queryKey: ['scores', room, tournamentId],
     queryFn: async () => {
       if (!room) return [];
-      const { data, error } = await supabase
-        .from('scores')
-        .select('*')
-        .eq('room', room);
+      let query = supabase.from('scores').select('*').eq('room', room);
+      if (tournamentId) query = query.eq('tournament_id', tournamentId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data as SpeakerScore[]) || [];
     },
@@ -52,21 +53,21 @@ export function useSpeakerScores(room: string) {
   return { speakerScores: data ?? [] };
 }
 
-export function useSubmitSpeakerScores(room: string) {
+export function useSubmitSpeakerScores(room: string, tournamentId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (scores: Omit<SpeakerScore, 'id' | 'room'>[]) => {
-      const payload = scores.map((s) => ({ ...s, room }));
+      const payload = scores.map((s) => ({ ...s, room, tournament_id: tournamentId }));
       const { error } = await supabase.from('scores').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', room] });
+      queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
     },
   });
 }
 
-export function useSubmitTeamScores(room: string) {
+export function useSubmitTeamScores(room: string, tournamentId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: {
@@ -75,11 +76,11 @@ export function useSubmitTeamScores(room: string) {
     }) => {
       const { error } = await supabase
         .from('team_scores')
-        .insert({ room, ...payload });
+        .insert({ room, tournament_id: tournamentId, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', room] });
+      queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
     },
   });
 }

@@ -4,10 +4,13 @@
  */
 import { hasSupabaseConfig } from '../supabase'
 
-// The ImportMetaEnv interface in newer TypeScript versions includes required
-// properties like MODE and PROD. To keep this test simple we allow any shape.
-interface MutableImportMeta extends ImportMeta {
-  env: any
+/**
+ * The ImportMetaEnv interface in newer TypeScript versions includes required
+ * properties like MODE and PROD. To keep this test simple we override `env`
+ * with a minimal shape.
+ */
+interface MutableImportMeta extends Omit<ImportMeta, 'env'> {
+  env: Record<string, string | undefined>
 }
 
 const importMeta = import.meta as unknown as MutableImportMeta
@@ -17,7 +20,7 @@ describe('hasSupabaseConfig', () => {
   const originalImportMetaEnv = { ...importMeta.env }
 
   beforeEach(() => {
-    // Clear both Vite and Node envs
+    // Clear both Vite-style and Node envs
     importMeta.env = {}
     delete process.env.VITE_SUPABASE_URL
     delete process.env.VITE_SUPABASE_ANON_KEY
@@ -27,7 +30,7 @@ describe('hasSupabaseConfig', () => {
 
   afterEach(() => {
     // Restore originals
-    importMeta.env = originalImportMetaEnv
+    importMeta.env = { ...originalImportMetaEnv }
     process.env = { ...originalProcessEnv }
   })
 
@@ -43,8 +46,8 @@ describe('hasSupabaseConfig', () => {
   })
 
   it('returns true when no env variables are set', () => {
-    // Defaults from src/lib/supabase should make the configuration valid even
-    // without explicit environment variables.
+    // Defaults in the implementation should allow fallback or demo mode,
+    // so hasSupabaseConfig returns true even without explicit vars.
     expect(hasSupabaseConfig()).toBe(true)
   })
 

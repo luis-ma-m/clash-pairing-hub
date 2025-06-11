@@ -46,9 +46,11 @@ export const createClient = () => ({
     },
     update: values => ({
       eq: (field, value) => {
-        const idx = (mockData[table] || []).findIndex(r => r[field] === value);
-        if (idx !== -1) mockData[table][idx] = { ...mockData[table][idx], ...values };
-        const updated = { data: mockData[table][idx] || null, error: null };
+        const list = mockData[table] || [];
+        const idx = list.findIndex(r => r[field] === value);
+        if (idx !== -1) list[idx] = { ...list[idx], ...values };
+        mockData[table] = list;
+        const updated = { data: list[idx] || null, error: null };
         const promise = makeThenable(updated);
         promise.select = () => ({ single: () => Promise.resolve(updated) });
         return promise;
