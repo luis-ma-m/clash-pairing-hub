@@ -157,6 +157,15 @@ describe('Core API Endpoints', () => {
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body)).toBe(true)
   })
+
+  it('PUT /api/tournaments/:id should persist status and settings', async () => {
+    const res = await request(app)
+      .put('/api/tournaments/t1')
+      .send({ status: 'completed', settings: { rounds: 5, elimination: 'double' } })
+    expect(res.status).toBe(200)
+    expect(res.body.status).toBe('completed')
+    expect(res.body.settings).toEqual({ rounds: 5, elimination: 'double' })
+  })
 })
 
 describe('Users CRUD', () => {

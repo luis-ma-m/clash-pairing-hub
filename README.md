@@ -260,6 +260,12 @@ The platform aims to enable tournament administrators to:
 - Round tracking with progression logic
 - Tournament status and settings management
 
+#### Usage
+The **All Tournaments** section of the dashboard lists every event in the
+database. Edit the status field or change settings like `rounds` and
+`elimination` type directly in the list and click **Save**. This issues a
+`PUT /api/tournaments/:id` request so the updates persist in Supabase.
+
 ### Phase 3: Real-time Features
 - WebSocket integration
 - Live score updates
