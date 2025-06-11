@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,22 +11,37 @@ import PairingEngine from '@/components/PairingEngine';
 import ScoringInterface from '@/components/ScoringInterface';
 import LiveAnalytics from '@/components/LiveAnalytics';
 import UserRoleManager from '@/components/UserRoleManager';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTournaments } from '@/lib/hooks/useTournaments';
 import { Trophy, Users, Shuffle, Target, BarChart3, Settings } from 'lucide-react';
 
 const Index = () => {
   
-  const [activeTournament] = useState({
-    id: 't1',
-    name: 'Oxford Invitational 2024',
-    format: 'Swiss + Elimination',
-    rounds: 4,
-    teams: 24,
-    status: 'In Progress',
-    settings: {
-      elimination: 'single',
-      preliminaryRounds: 4
+  const { tournaments } = useTournaments();
+  const [selectedId, setSelectedId] = useState<string>('');
+
+  useEffect(() => {
+    if (!selectedId && tournaments.length > 0) {
+      setSelectedId(tournaments[0].id);
     }
-  });
+  }, [tournaments, selectedId]);
+
+  const activeTournamentData = tournaments.find(t => t.id === selectedId);
+  const activeTournament = activeTournamentData
+    ? {
+        ...activeTournamentData,
+        rounds: (activeTournamentData.settings as Record<string, unknown>)?.rounds ?? 0,
+        teams: 0,
+      }
+    : {
+        id: '',
+        name: 'No Tournament Selected',
+        format: '',
+        rounds: 0,
+        teams: 0,
+        status: '',
+        settings: {},
+      };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -40,6 +55,16 @@ const Index = () => {
               <p className="text-slate-600 mt-1">Tournament Management System</p>
             </div>
             <div className="flex items-center gap-3">
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select tournament" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tournaments.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Badge variant={activeTournament.status === 'In Progress' ? 'default' : 'secondary'}>
                 {activeTournament.status}
               </Badge>
@@ -84,15 +109,15 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="pairings">
-            <PairingEngine />
+            <PairingEngine tournamentId={activeTournament.id} />
           </TabsContent>
 
           <TabsContent value="scoring">
-            <ScoringInterface />
+            <ScoringInterface tournamentId={activeTournament.id} />
           </TabsContent>
 
           <TabsContent value="analytics">
-            <LiveAnalytics />
+            <LiveAnalytics tournamentId={activeTournament.id} />
           </TabsContent>
 
           <TabsContent value="admin">

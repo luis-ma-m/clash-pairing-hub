@@ -12,13 +12,15 @@ export type Pairing = {
   propWins: boolean | null;
 };
 
-export function usePairings() {
+export function usePairings(tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery<Pairing[]>({
-    queryKey: ['pairings'],
+    queryKey: ['pairings', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('pairings').select('*');
+      let query = supabase.from('pairings').select('*');
+      if (tournamentId) query = query.eq('tournament_id', tournamentId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data as Pairing[]) || [];
     },
@@ -43,7 +45,7 @@ export function usePairings() {
       if (!res.ok) throw new Error('Failed to generate pairings');
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings', tournamentId] }),
   });
 
   return { pairings, currentRound, generatePairings: generatePairings.mutateAsync };

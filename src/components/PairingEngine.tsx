@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+// src/components/PairingEngine.tsx
+import React, { useEffect, useState } from 'react'
 import { usePairings, type Pairing } from '@/lib/hooks/usePairings'
 import { useRounds } from '@/lib/hooks/useRounds'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,29 +31,29 @@ const PairingEngine: React.FC = () => {
       .split(',')
       .map(j => j.trim())
       .filter(Boolean)
+
     await generatePairings({
       round: currentRound + 1,
+      algorithm: pairingAlgorithm,
       rooms,
       judges,
     })
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="space-y-6">
       <CardHeader>
         <CardTitle>Pairing Engine</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <span className="font-semibold">
-            Round {currentRound + 1} / {rounds.length}
+            Round {currentRound + 1} of {rounds.length}
           </span>
           <select
             value={pairingAlgorithm}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setPairingAlgorithm(
-                e.target.value as 'swiss' | 'power' | 'random',
-              )
+            onChange={(e) =>
+              setPairingAlgorithm(e.target.value as 'swiss' | 'power' | 'random')
             }
             className="border rounded px-2 py-1 text-sm"
           >
@@ -66,15 +67,18 @@ const PairingEngine: React.FC = () => {
           <Input
             placeholder="Rooms (comma separated)"
             value={roomsInput}
-            onChange={e => setRoomsInput(e.target.value)}
+            onChange={(e) => setRoomsInput(e.target.value)}
           />
           <Input
             placeholder="Judges (comma separated)"
             value={judgesInput}
-            onChange={e => setJudgesInput(e.target.value)}
+            onChange={(e) => setJudgesInput(e.target.value)}
           />
         </div>
-        <Button onClick={handleGenerate}>Generate Pairings</Button>
+
+        <Button onClick={handleGenerate} className="w-full">
+          Generate Pairings
+        </Button>
 
         <Table>
           <TableHeader>
@@ -88,7 +92,7 @@ const PairingEngine: React.FC = () => {
           </TableHeader>
           <TableBody>
             {pairings
-              .filter(p => p.round === currentRound + 1)
+              .filter((p) => p.round === currentRound + 1)
               .map((p: Pairing) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono">{p.room}</TableCell>
@@ -103,6 +107,6 @@ const PairingEngine: React.FC = () => {
       </CardContent>
     </Card>
   )
-};
+}
 
-export default PairingEngine;
+export default PairingEngine

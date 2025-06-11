@@ -7,7 +7,10 @@ import { Trophy, TrendingUp, Users, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch, expectJson } from '@/lib/api';
 
-const LiveAnalytics = () => {
+interface LiveAnalyticsProps {
+  tournamentId?: string;
+}
+const LiveAnalytics = ({ tournamentId }: LiveAnalyticsProps) => {
   const fetchStandings = async () => {
     const res = await apiFetch('/api/analytics/standings');
     if (!res.ok) throw new Error('Failed fetching standings');

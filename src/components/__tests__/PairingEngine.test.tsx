@@ -36,9 +36,9 @@ describe('PairingEngine', () => {
     });
 
     await act(async () => {
-      render(<PairingEngine />, { wrapper: createWrapper() });
+      render(<PairingEngine tournamentId="t1" />, { wrapper: createWrapper() });
     });
 
-    expect(screen.getByText(/Pairing Engine/i)).toBeInTheDocument();
+    expect(screen.getByText('Swiss')).toBeInTheDocument();
   });
 });
