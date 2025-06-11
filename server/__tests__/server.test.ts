@@ -157,6 +157,16 @@ describe('Core API Endpoints', () => {
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body)).toBe(true)
   })
+
+  it('GET /api/tournament/stats should return aggregated data', async () => {
+    const res = await request(app).get('/api/tournament/stats')
+    expect(res.status).toBe(200)
+    expect(res.body.currentRound).toBe(1)
+    expect(res.body.totalRounds).toBe(1)
+    expect(res.body.totalDebates).toBe(1)
+    expect(res.body.avgSpeakerScore).toBe(75)
+    expect(res.body.currentLeader).toBe('Alpha')
+  })
 })
 
 describe('Users CRUD', () => {

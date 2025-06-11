@@ -326,6 +326,58 @@ app.delete('/api/speakers/:id', async (req, res) => {
   res.json(data)
 })
 
+// ─── Tournament Stats ─────────────────────────────────────────────────────
+
+app.get('/api/tournament/stats', async (_req, res) => {
+  const [{ data: pairings, error: pErr }, { data: scores, error: sErr }, { data: teams, error: tErr }, { data: setting, error: setErr }] = await Promise.all([
+    supabase.from('pairings').select('*'),
+    supabase.from('scores').select('*'),
+    supabase.from('teams').select('*'),
+    supabase.from('settings').select('currentRound').single()
+  ])
+
+  if (pErr || sErr || tErr || setErr) {
+    const msg = pErr?.message || sErr?.message || tErr?.message || setErr?.message
+    return res.status(500).json({ error: msg })
+  }
+
+  const allPairings = (pairings as any[]) || []
+  const allScores = (scores as any[]) || []
+  const allTeams = (teams as any[]) || []
+
+  const totalDebates = allPairings.length
+  const totalRounds = new Set(allPairings.map(p => p.round)).size
+  const avgSpeakerScore = allScores.length
+    ? allScores.reduce((sum, s) => sum + (s.total || 0), 0) / allScores.length
+    : 0
+
+  const map = new Map<string, { team: string; wins: number; speakerPoints: number }>()
+  allTeams.forEach(t => map.set(t.name, { team: t.name, wins: 0, speakerPoints: 0 }))
+  allPairings.forEach(p => {
+    if (!map.has(p.proposition)) map.set(p.proposition, { team: p.proposition, wins: 0, speakerPoints: 0 })
+    if (!map.has(p.opposition)) map.set(p.opposition, { team: p.opposition, wins: 0, speakerPoints: 0 })
+    if (p.status === 'completed') {
+      if (p.propWins === true) map.get(p.proposition)!.wins++
+      else if (p.propWins === false) map.get(p.opposition)!.wins++
+    }
+  })
+  allScores.forEach(s => {
+    if (!map.has(s.team)) map.set(s.team, { team: s.team, wins: 0, speakerPoints: 0 })
+    map.get(s.team)!.speakerPoints += s.total || 0
+  })
+
+  const leader = Array.from(map.values()).sort((a, b) => b.wins - a.wins || b.speakerPoints - a.speakerPoints)[0]
+  const currentLeader = leader ? leader.team : null
+
+  res.json({
+    currentRound: setting?.currentRound ?? 1,
+    totalRounds,
+    totalDebates,
+    avgSpeakerScore,
+    currentLeader
+  })
+})
+
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
 
 app.get('/api/pairings', async (_req, res) => {

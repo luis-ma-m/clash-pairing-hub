@@ -35,16 +35,14 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
   });
 
   // ─── Derive values for progress bar and quick‐stats cards ────────────────
-  const currentRound   = stats?.currentRound  ?? 0;
-  const totalRounds    = stats?.totalRounds   ?? activeTournament.rounds;
-  const progress       = totalRounds ? (currentRound / totalRounds) * 100 : 0;
-  const quick          = stats?.quickStats    ?? { totalDebates: 0, avgSpeakerScore: 0, activeTeams: 0, currentLeader: '-' };
+  const currentRound = stats?.currentRound ?? 0;
+  const totalRounds = stats?.totalRounds ?? activeTournament.rounds;
+  const progress = totalRounds ? (currentRound / totalRounds) * 100 : 0;
 
   const quickStats = [
-    { label: 'Total Debates',     value: quick.totalDebates,    icon: Target },
-    { label: 'Avg Speaker Score', value: quick.avgSpeakerScore, icon: TrendingUp },
-    { label: 'Active Teams',      value: quick.activeTeams,     icon: Users },
-    { label: 'Current Leader',    value: quick.currentLeader,   icon: Trophy },
+    { label: 'Total Debates',     value: stats?.totalDebates    ?? 0,  icon: Target },
+    { label: 'Avg Speaker Score', value: stats?.avgSpeakerScore ?? 0,  icon: TrendingUp },
+    { label: 'Current Leader',    value: stats?.currentLeader   ?? '-', icon: Trophy },
   ];
 
   const { tournaments, addTournament, deleteTournament } = useTournaments();
