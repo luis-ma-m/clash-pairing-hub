@@ -6,6 +6,7 @@ export type Team = {
   id: number;
   name: string;
   organization: string;
+  tournament_id: string;
   speakers: string[];
   wins: number;
   losses: number;
@@ -26,10 +27,12 @@ export function useTeams(tournamentId?: string) {
   });
 
   const addTeam = useMutation({
-    mutationFn: async (team: Omit<Team, 'id' | 'wins' | 'losses' | 'speakerPoints'>) => {
+    mutationFn: async (
+      team: Omit<Team, 'id' | 'wins' | 'losses' | 'speakerPoints' | 'tournament_id'>,
+    ) => {
       const { data, error } = await supabase
         .from('teams')
-        .insert(team)
+        .insert({ ...team, tournament_id: tournamentId })
         .select()
         .single();
       if (error) throw error;

@@ -1,6 +1,13 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// Default connection details for the shared Supabase project. These are used
+// whenever the environment variables are not provided.
+export const DEFAULT_SUPABASE_URL =
+  'https://avzduledlmahtvmvgnxy.supabase.co'
+export const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk'
+
 export interface SupabaseConfig {
   url?: string
   anonKey?: string
@@ -20,12 +27,14 @@ export function getSupabaseConfig(): SupabaseConfig {
   const url =
     env.VITE_SUPABASE_URL ??
     process.env.VITE_SUPABASE_URL ??
-    process.env.SUPABASE_URL
+    process.env.SUPABASE_URL ??
+    DEFAULT_SUPABASE_URL
 
   const anonKey =
     env.VITE_SUPABASE_ANON_KEY ??
     process.env.VITE_SUPABASE_ANON_KEY ??
-    process.env.SUPABASE_ANON_KEY
+    process.env.SUPABASE_ANON_KEY ??
+    DEFAULT_SUPABASE_ANON_KEY
 
   return { url, anonKey }
 }
@@ -53,11 +62,11 @@ export function isSupabaseConfigured() {
   return hasSupabaseConfig()
 }
 
-// Create client even with placeholder values so imports succeed during testing
+// Create client even with default values so imports succeed during testing
 const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig()
 export const supabase = createClient(
-  SUPABASE_URL || 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY || 'placeholder-key'
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
 )
 
 export default supabase
