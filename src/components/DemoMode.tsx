@@ -112,22 +112,30 @@ export default function DemoMode() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tournament Formats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li>• British Parliamentary (BP)</li>
-              <li>• World Schools Debate (WSDC)</li>
-              <li>• Karl Popper format</li>
-              <li>• Custom formats</li>
-              <li>• Elimination brackets</li>
-              <li>• Swiss system rounds</li>
-            </ul>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Tournament Formats</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm">
+            <li>• British Parliamentary (BP)</li>
+            <li>• World Schools Debate (WSDC)</li>
+            <li>• Karl Popper format</li>
+            <li>• Custom formats</li>
+            <li>• Elimination brackets</li>
+            <li>• Swiss system rounds</li>
+          </ul>
+        </CardContent>
+      </Card>
       </div>
+      <Button className="w-full mt-6" onClick={() => {
+        import('@/lib/demoAuth').then(({ loginDemo }) => {
+          loginDemo()
+          window.location.reload()
+        })
+      }}>
+        Enter Demo Dashboard
+      </Button>
     </div>
   );
 }

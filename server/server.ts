@@ -1,4 +1,5 @@
 // server/server.ts
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { createClient } from '@supabase/supabase-js'

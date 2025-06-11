@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { logoutDemo } from '@/lib/demoAuth';
 
 interface DashboardNavProps {
   activeTournament: {
@@ -81,7 +82,14 @@ const DashboardNav = ({ activeTournament }: DashboardNavProps) => {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => supabase.auth.signOut()}>
+              <DropdownMenuItem onSelect={() => {
+                if (isSupabaseConfigured()) {
+                  supabase.auth.signOut()
+                } else {
+                  logoutDemo()
+                  window.location.href = '/signin'
+                }
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

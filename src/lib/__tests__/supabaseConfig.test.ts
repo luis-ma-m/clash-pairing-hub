@@ -1,4 +1,5 @@
 // src/lib/supabase/hasConfig.test.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { hasSupabaseConfig } from '../supabase'
 
 describe('hasSupabaseConfig', () => {
