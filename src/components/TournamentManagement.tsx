@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Users, Trophy, Play, Pause, TrendingUp, Target, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch, expectJson } from '@/lib/api';
-import { useTournaments } from '@/lib/hooks/useTournaments';
+import { useTournaments, Tournament } from '@/lib/hooks/useTournaments';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -47,7 +47,28 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
     { label: 'Current Leader',    value: quick.currentLeader,   icon: Trophy },
   ];
 
-  const { tournaments, addTournament, deleteTournament } = useTournaments();
+  const { tournaments, addTournament, updateTournament, deleteTournament } = useTournaments();
+  const [editValues, setEditValues] = useState<Record<string, { status?: string; rounds?: string; elimination?: string }>>({});
+
+  const handleEditChange = (id: string, field: string, value: string) => {
+    setEditValues(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
+  };
+
+  const saveEdits = async (id: string) => {
+    const values = editValues[id];
+    if (!values) return;
+    const updates: Partial<Tournament> = {};
+    if (values.status !== undefined) updates.status = values.status;
+    const settings: Record<string, unknown> = {};
+    if (values.rounds) settings.rounds = Number(values.rounds);
+    if (values.elimination) settings.elimination = values.elimination;
+    if (Object.keys(settings).length > 0) updates.settings = settings;
+    await updateTournament({ id, updates });
+    setEditValues(prev => ({ ...prev, [id]: {} }));
+  };
   const [name, setName] = useState('');
   const [format, setFormat] = useState('BP');
 
@@ -122,23 +143,51 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
           <CardDescription>Manage tournaments</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-              {tournaments.map((t) => (
-                <div key={t.id} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span>{t.name}</span>
-                    {t.status && <Badge variant="secondary">{t.status}</Badge>}
-                    {t.settings && (
-                      <code className="text-xs text-muted-foreground ml-2">
-                        {JSON.stringify(t.settings)}
-                      </code>
-                    )}
+            <div className="space-y-2">
+              {tournaments.map((t) => {
+                const edit = editValues[t.id] || {};
+                const currentSettings = t.settings as { rounds?: number; elimination?: string } | null;
+                return (
+                  <div key={t.id} className="space-y-1 border rounded p-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span>{t.name}</span>
+                        {t.status && <Badge variant="secondary">{t.status}</Badge>}
+                        {t.settings && (
+                          <code className="text-xs text-muted-foreground ml-2">
+                            {JSON.stringify(t.settings)}
+                          </code>
+                        )}
+                      </div>
+                      <Button size="icon" variant="ghost" onClick={() => deleteTournament(t.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Input
+                        placeholder="status"
+                        className="w-24"
+                        value={edit.status ?? t.status ?? ''}
+                        onChange={(e) => handleEditChange(t.id, 'status', e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="rounds"
+                        className="w-20"
+                        value={edit.rounds ?? currentSettings?.rounds ?? ''}
+                        onChange={(e) => handleEditChange(t.id, 'rounds', e.target.value)}
+                      />
+                      <Input
+                        placeholder="elimination"
+                        className="w-28"
+                        value={edit.elimination ?? currentSettings?.elimination ?? ''}
+                        onChange={(e) => handleEditChange(t.id, 'elimination', e.target.value)}
+                      />
+                      <Button size="sm" onClick={() => saveEdits(t.id)}>Save</Button>
+                    </div>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => deleteTournament(t.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-            ))}
+                );
+              })}
             {tournaments.length === 0 && <p className="text-sm text-muted-foreground">No tournaments</p>}
           </div>
           <div className="flex items-center gap-2 pt-2">

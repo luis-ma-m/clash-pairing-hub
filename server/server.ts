@@ -153,15 +153,18 @@ app.post('/api/tournaments', async (req, res) => {
   res.status(201).json(data)
 })
 
-app.put('/api/tournaments/:id', async (req, res) => {
+app.put('/api/tournaments/:id', checkSupabaseConfig, async (req, res) => {
   const { id } = req.params
   const parsed = tournamentSchema.partial().safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid request body' })
   }
+  const updates = {
+    ...parsed.data,
+  }
   const { data, error } = await supabase
     .from('tournaments')
-    .update(parsed.data)
+    .update(updates)
     .eq('id', id)
     .select()
     .single()
