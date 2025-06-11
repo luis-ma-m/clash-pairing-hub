@@ -8,13 +8,15 @@ export interface Round {
   status: string;
 }
 
-export function useRounds() {
+export function useRounds(tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery<Round[]>({
-    queryKey: ['rounds'],
+    queryKey: ['rounds', tournamentId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rounds').select('*');
+      let query = supabase.from('rounds').select('*');
+      if (tournamentId) query = query.eq('tournament_id', tournamentId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data as Round[]) || [];
     },
@@ -30,7 +32,7 @@ export function useRounds() {
       if (error) throw error;
       return data as Round;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds', tournamentId] }),
   });
 
   const updateRound = useMutation({
@@ -44,7 +46,7 @@ export function useRounds() {
       if (error) throw error;
       return data as Round;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds', tournamentId] }),
   });
 
   const deleteRound = useMutation({
@@ -58,7 +60,7 @@ export function useRounds() {
       if (error) throw error;
       return data as Round;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds', tournamentId] }),
   });
 
   return {

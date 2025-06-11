@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { usePairings, type Pairing } from '@/lib/hooks/usePairings';
 import { useRounds } from '@/lib/hooks/useRounds';
 
-const PairingEngine: React.FC = () => {
+interface PairingEngineProps {
+  tournamentId?: string;
+}
+const PairingEngine: React.FC<PairingEngineProps> = ({ tournamentId }) => {
   const [pairingAlgorithm, setPairingAlgorithm] = useState<'swiss' | 'power' | 'random'>('swiss');
-  const { pairings, currentRound } = usePairings();
-  const { rounds } = useRounds();
+  const { pairings, currentRound } = usePairings(tournamentId);
+  const { rounds } = useRounds(tournamentId);
 
   return (
     <div>
