@@ -57,7 +57,12 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
     if (validSpeakers.length > 5) {
       throw new Error('Cannot add more than 5 speakers');
     }
-    await addTeam({ name: teamName, organization, speakers: validSpeakers });
+    await addTeam({
+      tournament_id: tournamentId ?? '',
+      name: teamName,
+      organization,
+      speakers: validSpeakers,
+    });
   };
 
   const editTeam = async (payload: { id: number; updates: Partial<Team> }) => {
@@ -70,6 +75,7 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
 
   const handleExport = () => {
     const data: TeamCsv[] = teams.map(t => ({
+      tournament_id: tournamentId ?? '',
       name: t.name,
       organization: t.organization,
       speakers: t.speakers,
@@ -90,7 +96,7 @@ const TeamRoster = ({ tournamentId }: TeamRosterProps) => {
     const text = await file.text();
     const parsed = parseTeamsCsv(text);
     for (const team of parsed) {
-      await addTeam(team);
+      await addTeam({ ...team, tournament_id: tournamentId ?? team.tournament_id });
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
