@@ -157,10 +157,10 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    Create a project at [Supabase](https://supabase.com), then copy the **Project URL** and **Anon public key** from the dashboard. Add them to `.env`:
 
    ```
-   SUPABASE_URL=your Supabase project URL
-   SUPABASE_ANON_KEY=your anon key
-   VITE_SUPABASE_URL=your Supabase project URL
-   VITE_SUPABASE_ANON_KEY=your anon key
+   SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
+   SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
+   VITE_SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
    ```
 
    The Vite variables are used on the client and should match the server values.

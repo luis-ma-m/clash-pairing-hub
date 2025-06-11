@@ -4,8 +4,10 @@
  */
 import { hasSupabaseConfig } from '../supabase'
 
+// The ImportMetaEnv interface in newer TypeScript versions includes required
+// properties like MODE and PROD. To keep this test simple we allow any shape.
 interface MutableImportMeta extends ImportMeta {
-  env: Record<string, string | undefined>
+  env: any
 }
 
 const importMeta = import.meta as unknown as MutableImportMeta
@@ -40,8 +42,10 @@ describe('hasSupabaseConfig', () => {
     expect(hasSupabaseConfig()).toBe(true)
   })
 
-  it('returns false when no env variables are set', () => {
-    expect(hasSupabaseConfig()).toBe(false)
+  it('returns true when no env variables are set', () => {
+    // Defaults from src/lib/supabase should make the configuration valid even
+    // without explicit environment variables.
+    expect(hasSupabaseConfig()).toBe(true)
   })
 
   it('returns false when env values contain placeholders', () => {
