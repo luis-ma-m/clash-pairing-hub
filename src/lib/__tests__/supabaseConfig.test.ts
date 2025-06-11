@@ -28,6 +28,8 @@ describe('hasSupabaseConfig', () => {
       VITE_SUPABASE_URL: 'https://proj.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'anonkey'
     }
+    process.env.VITE_SUPABASE_URL = 'https://proj.supabase.co'
+    process.env.VITE_SUPABASE_ANON_KEY = 'anonkey'
     expect(hasSupabaseConfig()).toBe(true)
   })
 
