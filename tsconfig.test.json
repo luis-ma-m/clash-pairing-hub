@@ -11,5 +11,5 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["jest", "@testing-library/jest-dom", "node"]
   },
-  "include": ["src", "server", "jest.setup.ts", "**/*.test.ts", "**/*.test.tsx"]
+  "include": ["src", "jest.setup.ts", "**/*.test.ts", "**/*.test.tsx"]
 }

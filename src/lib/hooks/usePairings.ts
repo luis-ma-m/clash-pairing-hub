@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabase';
+import { getPairings, setPairings } from '../localData';
+import { generateSwissPairings, SwissTeam } from '../pairing';
+import { getTeamStandings } from '../localAnalytics';
 
 export type Pairing = {
   id: number;
@@ -17,14 +19,8 @@ export function usePairings(tournamentId?: string) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery<Pairing[]>({
-    queryKey: ['pairings', tournamentId],
-    queryFn: async () => {
-      let query = supabase.from('pairings').select('*');
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as Pairing[]) || [];
-    },
+    queryKey: ['pairings'],
+    queryFn: async () => getPairings() as Pairing[],
   });
 
   const pairings = data ?? [];
@@ -38,15 +34,14 @@ export function usePairings(tournamentId?: string) {
 
   const generatePairings = useMutation({
     mutationFn: async ({ round, rooms = [], judges = [] }: GeneratePayload) => {
-      const res = await fetch('/api/pairings/swiss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round, rooms, judges, tournament_id: tournamentId }),
-      })
-      if (!res.ok) throw new Error('Failed to generate pairings');
-      return res.json();
+      const standings = getTeamStandings();
+      const teams: SwissTeam[] = standings.map(s => ({ name: s.team, wins: s.wins, speakerPoints: s.speakerPoints }));
+      const previous = getPairings();
+      const newPairings = await generateSwissPairings(round, teams, previous, [], rooms, judges);
+      setPairings([...previous, ...newPairings]);
+      return newPairings;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings', tournamentId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings'] }),
   });
 
   return { pairings, currentRound, generatePairings: generatePairings.mutateAsync };
