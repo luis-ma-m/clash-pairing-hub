@@ -11,7 +11,6 @@
     "preview": "vite preview",
     "server": "node --loader ts-node/esm server/server.ts",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs",
-    "create-admin": "node --loader ts-node/esm scripts/createAdmin.ts",
     "postinstall": "echo 'Dependencies installed. Run npm test --silent and npm run lint before committing.'"
   },
   "dependencies": {
@@ -43,7 +42,6 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@supabase/supabase-js": "^2.50.0",
     "@tanstack/react-query": "^5.56.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
