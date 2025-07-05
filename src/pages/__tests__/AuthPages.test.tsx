@@ -1,12 +1,9 @@
 import { render, screen } from '@testing-library/react'
 
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-    },
-  },
+jest.mock('@/lib/storage', () => ({
+  setItem: jest.fn(),
+  getItem: jest.fn(),
+  removeItem: jest.fn(),
   __esModule: true,
 }))
 

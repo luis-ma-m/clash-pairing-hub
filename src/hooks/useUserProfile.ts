@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getItem } from '@/lib/storage'
 import { useAuth } from './useAuth'
 
 export interface UserProfile {
@@ -15,21 +15,18 @@ export interface UserProfile {
 }
 
 export function useUserProfile() {
-  const session = useAuth()
+  const { session } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(() => {
     if (!session?.user) return
     setLoading(true)
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single()
-    if (error) setError(error.message)
-    setProfile(data as UserProfile)
+    const users = getItem<UserProfile[]>('users') || []
+    const data = users.find(u => u.id === session.user!.id) || null
+    if (!data) setError('User not found')
+    setProfile(data)
     setLoading(false)
   }, [session])
 

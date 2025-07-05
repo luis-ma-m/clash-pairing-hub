@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabase';
+import { getItem, setItem } from '../storage';
 import { apiFetch, expectJson } from '../api';
 
 export interface Speaker {
@@ -27,41 +27,34 @@ export function useSpeakers(teamId?: string, tournamentId?: string) {
 
   const addSpeaker = useMutation({
     mutationFn: async (speaker: Omit<Speaker, 'id'>) => {
-      const { data, error } = await supabase
-        .from('speakers')
-        .insert(speaker)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Speaker;
+      const all = getItem<Speaker[]>('speakers') || []
+      const newRec: Speaker = { id: Date.now().toString(), ...speaker }
+      setItem('speakers', [...all, newRec])
+      return newRec
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['speakers'] }),
   });
 
   const updateSpeaker = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Speaker> }) => {
-      const { data, error } = await supabase
-        .from('speakers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Speaker;
+      const all = getItem<Speaker[]>('speakers') || []
+      const idx = all.findIndex(s => s.id === id)
+      if (idx === -1) throw new Error('not found')
+      all[idx] = { ...all[idx], ...updates }
+      setItem('speakers', all)
+      return all[idx]
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['speakers'] }),
   });
 
   const deleteSpeaker = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('speakers')
-        .delete()
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Speaker;
+      const all = getItem<Speaker[]>('speakers') || []
+      const idx = all.findIndex(s => s.id === id)
+      if (idx === -1) throw new Error('not found')
+      const [removed] = all.splice(idx, 1)
+      setItem('speakers', all)
+      return removed
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['speakers'] }),
   });

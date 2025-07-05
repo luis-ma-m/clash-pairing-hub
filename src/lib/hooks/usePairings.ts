@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabase';
+import { getItem, setItem } from '../storage';
 
 export type Pairing = {
   id: number;
@@ -19,11 +19,8 @@ export function usePairings(tournamentId?: string) {
   const { data } = useQuery<Pairing[]>({
     queryKey: ['pairings', tournamentId],
     queryFn: async () => {
-      let query = supabase.from('pairings').select('*');
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as Pairing[]) || [];
+      const all = getItem<Pairing[]>('pairings') || []
+      return tournamentId ? all.filter(p => p.tournament_id === tournamentId) : all
     },
   });
 
@@ -38,13 +35,21 @@ export function usePairings(tournamentId?: string) {
 
   const generatePairings = useMutation({
     mutationFn: async ({ round, rooms = [], judges = [] }: GeneratePayload) => {
-      const res = await fetch('/api/pairings/swiss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round, rooms, judges, tournament_id: tournamentId }),
-      })
-      if (!res.ok) throw new Error('Failed to generate pairings');
-      return res.json();
+      const all = getItem<Pairing[]>('pairings') || []
+      const nextId = all.length + 1
+      const newPairings: Pairing[] = rooms.map((room, i) => ({
+        id: nextId + i,
+        tournament_id: tournamentId || '',
+        round,
+        room,
+        proposition: `Team ${i}`,
+        opposition: `Team ${i+1}`,
+        judge: judges[i] || '',
+        status: 'scheduled',
+        propWins: null
+      }))
+      setItem('pairings', [...all, ...newPairings])
+      return newPairings
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pairings', tournamentId] }),
   });

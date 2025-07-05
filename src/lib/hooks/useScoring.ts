@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabase';
+import { getItem, setItem } from '../storage';
 
 export type Debate = {
   room: string;
@@ -25,11 +25,8 @@ export function useDebates(tournamentId?: string) {
   const { data } = useQuery<Debate[]>({
     queryKey: ['debates', tournamentId],
     queryFn: async () => {
-      let query = supabase.from('debates').select('*');
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as Debate[]) || [];
+      const all = getItem<(Debate & { tournament_id?: string })[]>('debates') || []
+      return tournamentId ? all.filter(d => d.tournament_id === tournamentId) : all
     },
     refetchInterval: 5000,
   });
@@ -41,11 +38,8 @@ export function useSpeakerScores(room: string, tournamentId?: string) {
     queryKey: ['scores', room, tournamentId],
     queryFn: async () => {
       if (!room) return [];
-      let query = supabase.from('scores').select('*').eq('room', room);
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as SpeakerScore[]) || [];
+      const all = getItem<(SpeakerScore & { tournament_id?: string })[]>('scores') || []
+      return all.filter(s => s.room === room && (!tournamentId || s.tournament_id === tournamentId))
     },
     enabled: !!room,
     refetchInterval: 5000,
@@ -58,8 +52,9 @@ export function useSubmitSpeakerScores(room: string, tournamentId?: string) {
   return useMutation({
     mutationFn: async (scores: Omit<SpeakerScore, 'id' | 'room'>[]) => {
       const payload = scores.map((s) => ({ ...s, room, tournament_id: tournamentId }));
-      const { error } = await supabase.from('scores').insert(payload);
-      if (error) throw error;
+      const all = getItem<SpeakerScore[]>('scores') || []
+      const withIds = payload.map((p, i) => ({ ...p, id: Date.now() + i }))
+      setItem('scores', [...all, ...withIds])
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
@@ -74,10 +69,9 @@ export function useSubmitTeamScores(room: string, tournamentId?: string) {
       proposition: { points: number; margin: number };
       opposition: { points: number; margin: number };
     }) => {
-      const { error } = await supabase
-        .from('team_scores')
-        .insert({ room, tournament_id: tournamentId, ...payload });
-      if (error) throw error;
+      const all = getItem<Record<string, unknown>[]>('team_scores') || []
+      all.push({ room, tournament_id: tournamentId, ...payload })
+      setItem('team_scores', all)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });

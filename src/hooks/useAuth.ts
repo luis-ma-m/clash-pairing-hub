@@ -1,14 +1,34 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getItem, setItem, removeItem } from '@/lib/storage'
+
+interface SessionData {
+  user?: { id: string; email?: string }
+}
 
 export function useAuth() {
-  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] | null>(null)
+  const [session, setSession] = useState<SessionData | null>(getItem<SessionData>('session'))
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => subscription.unsubscribe()
+    const handleStorage = () => setSession(getItem<SessionData>('session'))
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorage)
+      }
+    }
   }, [])
 
-  return session
+  const login = (s: SessionData) => {
+    setItem('session', s)
+    setSession(s)
+  }
+
+  const logout = () => {
+    removeItem('session')
+    setSession(null)
+  }
+
+  return { session, login, logout }
 }

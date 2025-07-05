@@ -1,8 +1,7 @@
 // src/pages/SignUp.tsx
 import React, { useEffect, useState } from 'react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { setItem, getItem } from '@/lib/storage'
 import { useNavigate, Link } from 'react-router-dom'
-import AuthFallback from '@/components/AuthFallback'
 import {
   Card,
   CardContent,
@@ -20,43 +19,17 @@ export default function SignUp() {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [hasConfig, setHasConfig] = useState(true)
 
-  useEffect(() => {
-    // Evaluate Supabase configuration once on mount.
-    // Covers both local dev and production/static builds.
-    setHasConfig(isSupabaseConfigured())
-  }, [])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } }
-    })
-    if (error) {
-      setError(error.message)
-    } else {
-      const userId = data.user?.id
-      if (userId) {
-        await supabase
-          .from('users')
-          .upsert({
-            id: userId,
-            email,
-            name,
-            role: 'user',
-            is_active: true,
-            last_login: null,
-          })
-      }
-      navigate('/')
+    const user = { id: email, email, name }
+    setItem('session', { user })
+    const users = getItem<Record<string, unknown>[]>('users') || []
+    if (!users.find(u => u.id === user.id)) {
+      users.push({ ...user, role: 'user', is_active: true })
+      setItem('users', users)
     }
-  }
-
-  if (!hasConfig) {
-    return <AuthFallback />
+    navigate('/')
   }
 
   return (
