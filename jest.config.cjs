@@ -5,7 +5,8 @@ module.exports = {
   testEnvironment: 'jsdom',
 
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@supabase/supabase-js$': '<rootDir>/test/localStorageSupabase.ts'
   },
 
   setupFiles: ['<rootDir>/jest.polyfill.ts'],

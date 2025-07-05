@@ -25,6 +25,10 @@ export function setMockData(data: MockDatabase) {
   store.setItem(KEY, JSON.stringify(data))
 }
 
+export function getMockData(): MockDatabase {
+  return readData()
+}
+
 function readData(): MockDatabase {
   const store = getStore()
   const raw = store.getItem(KEY)
@@ -116,3 +120,10 @@ export function createMockClient() {
     })
   }
 }
+
+export function createClient() {
+  return createMockClient()
+}
+
+export default { createClient }
+

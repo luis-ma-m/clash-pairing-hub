@@ -4,7 +4,7 @@
 import request from 'supertest';
 import type { Express } from 'express';
 import { jest } from '@jest/globals';
-import { setMockData, createMockClient } from '../../test/localStorageSupabase';
+import { setMockData } from '../../test/localStorageSupabase';
 
 const seed = {
   tournaments: [
@@ -31,11 +31,6 @@ const seed = {
 };
 
 let data: any = JSON.parse(JSON.stringify(seed));
-
-jest.mock('@supabase/supabase-js', () => ({
-  __esModule: true,
-  createClient: () => createMockClient()
-}));
 
 let app: Express;
 beforeAll(async () => {

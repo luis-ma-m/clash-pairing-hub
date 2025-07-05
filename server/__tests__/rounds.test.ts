@@ -5,7 +5,7 @@ import request from 'supertest'
 import type { Express } from 'express'
 import { jest } from '@jest/globals'
 // @ts-expect-error - provided by Jest mock
-import { setMockData, createMockClient } from '../../test/localStorageSupabase'
+import { setMockData, getMockData } from '../../test/localStorageSupabase'
 
 const seed = {
   teams: [
@@ -25,11 +25,7 @@ const seed = {
 
 let data: Record<string, any> = JSON.parse(JSON.stringify(seed))
 
-// Mock Supabase client so our server code uses in-memory data
-jest.mock('@supabase/supabase-js', () => ({
-  __esModule: true,
-  createClient: () => createMockClient()
-}))
+// Supabase client requests are resolved to the localStorage mock via Jest config
 
 let app: Express
 
@@ -58,6 +54,7 @@ describe('Swiss pairing rounds', () => {
     // With 3 teams, Swiss will generate one pairing and leave one bye
     expect(res.body.length).toBe(1)
     // After running, the settings.currentRound should advance to 2
+    data = getMockData()
     expect(data.settings[0].currentRound).toBe(2)
   })
 })
@@ -77,6 +74,7 @@ describe('Round progression', () => {
         tournament_id: 't1'
       }
     ]
+    setMockData(data)
 
     const res = await request(app).post('/api/rounds/progress')
     expect(res.status).toBe(400)
@@ -98,12 +96,14 @@ describe('Round progression', () => {
         tournament_id: 't1'
       }
     ]
+    setMockData(data)
 
     const res = await request(app).post('/api/rounds/progress')
     expect(res.status).toBe(200)
     // Response returns the new round
     expect(res.body.currentRound).toBe(2)
     // And our in-memory settings reflect that
+    data = getMockData()
     expect(data.settings[0].currentRound).toBe(2)
   })
 })

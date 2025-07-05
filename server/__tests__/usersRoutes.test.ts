@@ -4,12 +4,9 @@
 import request from 'supertest'
 import express from 'express'
 import { jest } from '@jest/globals'
-import { setMockData, createMockClient } from '../../test/localStorageSupabase'
+import { setMockData } from '../../test/localStorageSupabase'
 
-jest.mock('@supabase/supabase-js', () => ({
-  __esModule: true,
-  createClient: () => createMockClient()
-}))
+// Supabase client will be mocked via moduleNameMapper
 
 import usersRouter from '../routes/users'
 

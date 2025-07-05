@@ -4,7 +4,7 @@
 import request from 'supertest'
 import type { Express } from 'express'
 import { jest } from '@jest/globals'
-import { setMockData, createMockClient } from '../../test/localStorageSupabase'
+import { setMockData } from '../../test/localStorageSupabase'
 
 const seed = {
   teams: [
@@ -27,11 +27,6 @@ const seed = {
 }
 
 let data: Record<string, any> = JSON.parse(JSON.stringify(seed))
-
-jest.mock('@supabase/supabase-js', () => ({
-  __esModule: true,
-  createClient: () => createMockClient()
-}))
 
 let app: Express
 
@@ -60,6 +55,7 @@ describe('Analytics endpoints', () => {
 
   it('returns speaker averages', async () => {
     data.scores.push({ id: 3, room: 'A1', speaker: 'B1', team: 'Bravo', total: 55 })
+    setMockData(data)
     const res = await request(app).get('/api/analytics/speakers')
     expect(res.status).toBe(200)
     expect(res.body[0].name).toBe('A1')
@@ -79,6 +75,7 @@ describe('Analytics endpoints', () => {
       propWins: false
     })
     data.scores.push({ id: 3, room: 'B1', speaker: 'A1', team: 'Alpha', total: 72 })
+    setMockData(data)
 
     const res = await request(app).get('/api/analytics/performance')
     expect(res.status).toBe(200)

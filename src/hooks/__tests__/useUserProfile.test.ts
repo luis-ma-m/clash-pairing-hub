@@ -3,12 +3,9 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { useUserProfile } from '../useUserProfile'
 import { supabase } from '@/lib/supabase'
 import { jest } from '@jest/globals'
-import { setMockData, createMockClient } from '../../../test/localStorageSupabase'
+import { setMockData } from '../../../test/localStorageSupabase'
 
-jest.mock('@/lib/supabase', () => ({
-  __esModule: true,
-  supabase: createMockClient()
-}))
+// Supabase client is mapped to the localStorage mock via Jest config
 
 describe('useUserProfile', () => {
   it('fetches the current user profile', async () => {
