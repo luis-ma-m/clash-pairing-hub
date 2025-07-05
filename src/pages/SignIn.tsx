@@ -1,8 +1,7 @@
 // src/pages/SignIn.tsx
 import React, { useEffect, useState } from 'react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
-import AuthFallback from '@/components/AuthFallback'
 import { loginDemo } from '@/lib/demoAuth'
 import {
   Card,
@@ -27,26 +26,17 @@ export default function SignIn() {
     setHasConfig(isSupabaseConfigured())
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  interface StoredUser { id: string; email: string; name?: string; password: string }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
+    const users = JSON.parse(localStorage.getItem('users') ?? '[]') as StoredUser[]
+    const user = users.find((u) => u.email === email && u.password === password)
+    if (!user) {
+      setError('Invalid email or password')
       return
     }
-    const userId = data.user?.id
-    if (userId) {
-      await supabase
-        .from('users')
-        .upsert({
-          id: userId,
-          email,
-          name: data.user.user_metadata?.name ?? null,
-          role: 'user',
-          is_active: true,
-          last_login: new Date().toISOString(),
-        })
-    }
+    localStorage.setItem('userSession', user.id)
     navigate('/')
   }
 

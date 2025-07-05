@@ -1,6 +1,6 @@
 // src/pages/SignUp.tsx
 import React, { useEffect, useState } from 'react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthFallback from '@/components/AuthFallback'
 import {
@@ -28,31 +28,24 @@ export default function SignUp() {
     setHasConfig(isSupabaseConfigured())
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  interface StoredUser { id: string; email: string; name: string; password: string }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } }
-    })
-    if (error) {
-      setError(error.message)
-    } else {
-      const userId = data.user?.id
-      if (userId) {
-        await supabase
-          .from('users')
-          .upsert({
-            id: userId,
-            email,
-            name,
-            role: 'user',
-            is_active: true,
-            last_login: null,
-          })
-      }
-      navigate('/')
+    const users = JSON.parse(localStorage.getItem('users') ?? '[]') as StoredUser[]
+    if (users.some((u) => u.email === email)) {
+      setError('User already exists')
+      return
     }
+    const id =
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now().toString()
+    const newUser = { id, email, name, password }
+    users.push(newUser)
+    localStorage.setItem('users', JSON.stringify(users))
+    localStorage.setItem('userSession', id)
+    navigate('/')
   }
 
   if (!hasConfig) {

@@ -1,13 +1,13 @@
 
 import { Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import DemoMode from './DemoMode'
 import { isDemoLoggedIn } from '@/lib/demoAuth'
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
   const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<null | Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']>(null)
+  const [session, setSession] = useState<string | null>(null)
   const [hasConfig, setHasConfig] = useState(true)
 
   useEffect(() => {
@@ -19,20 +19,14 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
       return
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess)
-      setLoading(false)
-    })
-    
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
-    }).catch(() => {
-      setHasConfig(false);
-      setLoading(false);
-    })
-    
-    return () => { subscription.unsubscribe() }
+    setSession(localStorage.getItem('userSession'))
+    const handler = () => {
+      setSession(localStorage.getItem('userSession'))
+    }
+    window.addEventListener('storage', handler)
+    setLoading(false)
+
+    return () => { window.removeEventListener('storage', handler) }
   }, [])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>

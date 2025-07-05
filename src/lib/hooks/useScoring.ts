@@ -1,5 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Pairing } from './usePairings'
+
+function readLocal<T>(key: string): T[] {
+  if (typeof localStorage === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]') as T[]
+  } catch {
+    return []
+  }
+}
+
+function writeLocal<T>(key: string, value: T[]): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(key, JSON.stringify(value))
+}
 
 export type Debate = {
   room: string;
@@ -24,32 +38,30 @@ export type SpeakerScore = {
 export function useDebates(tournamentId?: string) {
   const { data } = useQuery<Debate[]>({
     queryKey: ['debates', tournamentId],
-    queryFn: async () => {
-      let query = supabase.from('debates').select('*');
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as Debate[]) || [];
+    queryFn: () => {
+      const pairings = readLocal<Pairing>('pairings') as unknown as Debate[]
+      return tournamentId
+        ? pairings.filter((d: Pairing) => d.tournament_id === tournamentId)
+        : pairings
     },
     refetchInterval: 5000,
-  });
+  })
   return { debates: data ?? [] };
 }
 
 export function useSpeakerScores(room: string, tournamentId?: string) {
   const { data } = useQuery<SpeakerScore[]>({
     queryKey: ['scores', room, tournamentId],
-    queryFn: async () => {
-      if (!room) return [];
-      let query = supabase.from('scores').select('*').eq('room', room);
-      if (tournamentId) query = query.eq('tournament_id', tournamentId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as SpeakerScore[]) || [];
+    queryFn: () => {
+      if (!room) return []
+      const scores = readLocal<SpeakerScore>('scores')
+      let filtered = scores.filter((s) => s.room === room)
+      if (tournamentId) filtered = filtered.filter((s) => (s as SpeakerScore & { tournament_id?: string }).tournament_id === tournamentId)
+      return filtered
     },
     enabled: !!room,
     refetchInterval: 5000,
-  });
+  })
   return { speakerScores: data ?? [] };
 }
 
@@ -57,9 +69,9 @@ export function useSubmitSpeakerScores(room: string, tournamentId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (scores: Omit<SpeakerScore, 'id' | 'room'>[]) => {
+      const existing = readLocal<SpeakerScore>('scores');
       const payload = scores.map((s) => ({ ...s, room, tournament_id: tournamentId }));
-      const { error } = await supabase.from('scores').insert(payload);
-      if (error) throw error;
+      writeLocal('scores', [...existing, ...payload]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
@@ -74,10 +86,9 @@ export function useSubmitTeamScores(room: string, tournamentId?: string) {
       proposition: { points: number; margin: number };
       opposition: { points: number; margin: number };
     }) => {
-      const { error } = await supabase
-        .from('team_scores')
-        .insert({ room, tournament_id: tournamentId, ...payload });
-      if (error) throw error;
+      const existing = readLocal<{ room: string; tournament_id?: string }>('scores');
+      const record = { room, tournament_id: tournamentId, ...payload };
+      writeLocal('scores', [...existing, record]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });

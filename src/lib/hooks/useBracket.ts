@@ -1,6 +1,14 @@
 // src/lib/hooks/useBracket.ts
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../supabase'
+
+function readLocal<T>(key: string): T[] {
+  if (typeof localStorage === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]') as T[]
+  } catch {
+    return []
+  }
+}
 
 export interface BracketMatch {
   id: string
@@ -38,20 +46,13 @@ export interface BracketRecord {
 export function useBracket(tournamentId?: string) {
   const { data } = useQuery<BracketRecord | null>({
     queryKey: ['bracket', tournamentId],
-    queryFn: async () => {
-      let query = supabase.from('brackets').select('*')
-      if (tournamentId) query = query.eq('tournament_id', tournamentId)
-      const { data, error } = await query.single()
-
-      if (error) {
-        // Supabase returns PGRST116 when no record exists
-        if (error.code === 'PGRST116') return null
-        throw error
+    queryFn: () => {
+      const records = readLocal<BracketRecord>('brackets')
+      if (tournamentId) {
+        return records.find((b) => b.tournament_id === tournamentId) || null
       }
-
-      return data as BracketRecord
+      return records[0] || null
     },
-    // Poll every 5 seconds to keep the UI updated
     refetchInterval: 5000,
   })
 

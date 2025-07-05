@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 
 export function useAuth() {
-  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] | null>(null)
+  const [session, setSession] = useState<{ user: { id: string } } | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => subscription.unsubscribe()
+    const token = localStorage.getItem('userSession')
+    if (token) setSession({ user: { id: token } })
+    const handler = () => {
+      const t = localStorage.getItem('userSession')
+      setSession(t ? { user: { id: t } } : null)
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
   }, [])
 
   return session
