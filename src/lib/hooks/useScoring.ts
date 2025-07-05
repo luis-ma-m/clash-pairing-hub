@@ -1,80 +1,52 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getItem, setItem } from '../storage';
+// src/lib/hooks/useAuth.ts
+import { useEffect, useState } from 'react'
+import { getItem, setItem, removeItem } from '@/lib/storage'
 
-export type Debate = {
-  room: string;
-  proposition: string;
-  opposition: string;
-  judge: string;
-  status: string;
-};
-
-export type SpeakerScore = {
-  id?: number;
-  room: string;
-  speaker: string;
-  team: string;
-  position: string;
-  content: number;
-  style: number;
-  strategy: number;
-  total: number;
-};
-
-export function useDebates(tournamentId?: string) {
-  const { data } = useQuery<Debate[]>({
-    queryKey: ['debates', tournamentId],
-    queryFn: async () => {
-      const all = getItem<(Debate & { tournament_id?: string })[]>('debates') || []
-      return tournamentId ? all.filter(d => d.tournament_id === tournamentId) : all
-    },
-    refetchInterval: 5000,
-  });
-  return { debates: data ?? [] };
+interface SessionData {
+  user?: {
+    id: string
+    email?: string
+  }
 }
 
-export function useSpeakerScores(room: string, tournamentId?: string) {
-  const { data } = useQuery<SpeakerScore[]>({
-    queryKey: ['scores', room, tournamentId],
-    queryFn: async () => {
-      if (!room) return [];
-      const all = getItem<(SpeakerScore & { tournament_id?: string })[]>('scores') || []
-      return all.filter(s => s.room === room && (!tournamentId || s.tournament_id === tournamentId))
-    },
-    enabled: !!room,
-    refetchInterval: 5000,
-  });
-  return { speakerScores: data ?? [] };
-}
+/**
+ * A hook for managing a simple session object in local storage.
+ */
+export function useAuth() {
+  // Initialize from storage (or null)
+  const [session, setSession] = useState<SessionData | null>(() =>
+    getItem<SessionData>('session')
+  )
 
-export function useSubmitSpeakerScores(room: string, tournamentId?: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (scores: Omit<SpeakerScore, 'id' | 'room'>[]) => {
-      const payload = scores.map((s) => ({ ...s, room, tournament_id: tournamentId }));
-      const all = getItem<SpeakerScore[]>('scores') || []
-      const withIds = payload.map((p, i) => ({ ...p, id: Date.now() + i }))
-      setItem('scores', [...all, ...withIds])
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
-    },
-  });
-}
+  // Listen for storage events so multiple tabs stay in sync
+  useEffect(() => {
+    const handleStorage = () => {
+      const s = getItem<SessionData>('session')
+      setSession(s)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage)
+      return () => {
+        window.removeEventListener('storage', handleStorage)
+      }
+    }
+  }, [])
 
-export function useSubmitTeamScores(room: string, tournamentId?: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: {
-      proposition: { points: number; margin: number };
-      opposition: { points: number; margin: number };
-    }) => {
-      const all = getItem<Record<string, unknown>[]>('team_scores') || []
-      all.push({ room, tournament_id: tournamentId, ...payload })
-      setItem('team_scores', all)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scores', room, tournamentId] });
-    },
-  });
+  /**
+   * Log in by writing the session to storage and updating state.
+   */
+  const login = (s: SessionData) => {
+    setItem('session', s)
+    setSession(s)
+  }
+
+  /**
+   * Log out by removing the session from storage and clearing state.
+   */
+  const logout = () => {
+    removeItem('session')
+    setSession(null)
+  }
+
+  return { session, login, logout }
 }

@@ -8,7 +8,7 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
 
 ## Running the Development Servers
 - `npm run dev` – starts the Vite dev server for the frontend.
-- `npm run server` – runs the API server (`server/server.ts`).  The default URL is `http://localhost:3001`.
+- `npm run server` – *removed*. The project no longer includes a separate API server.
 
 ## Testing
 - Execute the entire test suite with:
@@ -17,7 +17,7 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
   npm test --silent
   ```
 
-- Tests are located under `server/__tests__` and `src/**/__tests__`.
+- Tests are located under `src/**/__tests__`.
 - If tests complain about missing environment variables, copy `.env.example` to `.env` and provide values for `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and related keys.  The backend refuses to start without them.
 
 ## Linting
@@ -36,7 +36,7 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
 
 ## Repository Layout
 - `src/` – React components and utilities.
-- `server/` – Express API and pairing logic.
+- `server/` – **removed**. Pairing logic now lives client side.
 - `supabase/` – Supabase configuration and SQL migrations.
 - `ROADMAP.md` – Long term development plan.
 

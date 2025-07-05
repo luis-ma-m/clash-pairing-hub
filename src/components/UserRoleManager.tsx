@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Shield, Users, Eye } from 'lucide-react';
-import { apiFetch, expectJson } from '@/lib/api';
+import { getUsers, setUsers } from '@/lib/localData';
 
 type User = {
   id: number;
@@ -38,11 +38,7 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
 
   const queryClient = useQueryClient();
 
-  const fetchUsers = async () => {
-    const res = await apiFetch('/api/users');
-    if (!res.ok) throw new Error('Failed fetching users');
-    return expectJson(res);
-  };
+  const fetchUsers = async () => getUsers() as User[];
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['users'],
@@ -51,29 +47,30 @@ const UserRoleManager = ({ currentUser }: UserRoleManagerProps) => {
   });
 
   const addUser = async () => {
-    const res = await apiFetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, role, lastActive: 'just now', status: 'active', permissions: [] })
-    });
-    if (!res.ok) throw new Error('Failed to add user');
-    return expectJson(res);
+    const users = getUsers() as User[];
+    const newUser: User = {
+      id: Date.now(),
+      name,
+      email,
+      role,
+      permissions: [],
+      lastActive: 'just now',
+      status: 'active',
+    };
+    setUsers([...users, newUser]);
+    return newUser;
   };
 
   const updateUser = async (user: User) => {
-    const res = await apiFetch(`/api/users/${user.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    });
-    if (!res.ok) throw new Error('Failed to update user');
-    return expectJson(res);
+    const users = getUsers() as User[];
+    const updated = users.map(u => (u.id === user.id ? user : u));
+    setUsers(updated);
+    return user;
   };
 
   const deleteUser = async (id: number) => {
-    const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete user');
-    return expectJson(res);
+    const users = getUsers() as User[];
+    setUsers(users.filter(u => u.id !== id));
   };
 
   const { mutateAsync: createUser } = useMutation({

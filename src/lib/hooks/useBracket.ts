@@ -20,10 +20,6 @@ export interface Bracket {
   losers?: BracketRound[]
 }
 
-/**
- * Represents the record fetched from Supabase.
- * The `data` field always contains a fully-typed Bracket object.
- */
 export interface BracketRecord {
   id: string
   tournament_id: string
@@ -31,10 +27,6 @@ export interface BracketRecord {
   data: Bracket
 }
 
-/**
- * Hook to fetch the current bracket from Supabase.
- * Returns `{ bracket: BracketRecord | null }`.
- */
 export function useBracket(tournamentId?: string) {
   const { data } = useQuery<BracketRecord | null>({
     queryKey: ['bracket', tournamentId],

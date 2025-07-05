@@ -6,8 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Users, Trophy, Play, Pause, TrendingUp, Target, Trash2 } from 'lucide-react';
-import { apiFetch, expectJson } from '@/lib/api';
 import { useTournaments, Tournament } from '@/lib/hooks/useTournaments';
+import {
+  getTeamStandings,
+  getRoundPerformance,
+  getCurrentRound,
+} from '@/lib/localAnalytics';
+import { getPairings, setPairings } from '@/lib/localData';
+import { generateSwissPairings, SwissTeam } from '@/lib/pairing';
 
 interface TournamentManagementProps {
   activeTournament: {
@@ -21,11 +27,26 @@ interface TournamentManagementProps {
 }
 
 const TournamentManagement = ({ activeTournament }: TournamentManagementProps) => {
-  // ─── Fetch live tournament stats from the backend ─────────────────────────
+  // ─── Compute live tournament stats from localStorage ──────────────────────
   const fetchStats = async () => {
-    const res = await apiFetch('/api/tournament/stats');
-    if (!res.ok) throw new Error('Failed fetching stats');
-    return expectJson(res);
+    const pairings = getPairings();
+    const currentRound = getCurrentRound();
+    const performance = getRoundPerformance();
+    const totalDebates = pairings.length;
+    const avgSpeakerScore = (() => {
+      const total = performance.reduce((acc, r) => acc + r.avgScore * r.debates, 0);
+      const count = performance.reduce((acc, r) => acc + r.debates, 0);
+      return count ? Number((total / count).toFixed(1)) : 0;
+    })();
+    const standings = getTeamStandings();
+    const currentLeader = standings[0]?.team || '-';
+    return {
+      currentRound,
+      totalRounds: activeTournament.rounds,
+      totalDebates,
+      avgSpeakerScore,
+      currentLeader,
+    };
   };
 
   const queryClient = useQueryClient();
@@ -38,22 +59,24 @@ const TournamentManagement = ({ activeTournament }: TournamentManagementProps) =
 
   const startNextRound = useMutation({
     mutationFn: async () => {
-      const res = await apiFetch('/api/pairings/swiss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round: (stats?.currentRound ?? 0) + 1 })
-      });
-      if (!res.ok) throw new Error('Failed to generate pairings');
-      return expectJson(res);
+      const previous = getPairings();
+      const nextRound = getCurrentRound() + 1;
+      const standings = getTeamStandings();
+      const teams: SwissTeam[] = standings.map(s => ({ name: s.team, wins: s.wins, speakerPoints: s.speakerPoints }));
+      const newPairings = await generateSwissPairings(nextRound, teams, previous);
+      setPairings([...previous, ...newPairings]);
+      return newPairings;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournament-stats'] })
   });
 
   const progressRound = useMutation({
     mutationFn: async () => {
-      const res = await apiFetch('/api/rounds/progress', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to progress round');
-      return expectJson(res);
+      const current = getCurrentRound();
+      const updated = getPairings().map(p =>
+        p.round === current ? { ...p, status: 'completed' } : p,
+      );
+      setPairings(updated);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournament-stats'] })
   });

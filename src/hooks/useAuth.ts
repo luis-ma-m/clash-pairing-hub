@@ -1,3 +1,4 @@
+// hooks/useAuth.ts
 import { useEffect, useState } from 'react'
 import { getItem, setItem, removeItem } from '@/lib/storage'
 
@@ -6,10 +7,15 @@ interface SessionData {
 }
 
 export function useAuth() {
-  const [session, setSession] = useState<SessionData | null>(getItem<SessionData>('session'))
+  const [session, setSession] = useState<SessionData | null>(() =>
+    getItem<SessionData>('session')
+  )
 
   useEffect(() => {
-    const handleStorage = () => setSession(getItem<SessionData>('session'))
+    const handleStorage = () => {
+      setSession(getItem<SessionData>('session'))
+    }
+
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorage)
     }
