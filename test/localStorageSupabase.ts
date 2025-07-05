@@ -1,5 +1,6 @@
 // test/localStorageSupabase.ts
-// Simple Supabase client mock backed by localStorage
+// Simple Supabase client mock backed by localStorage.
+// Call `setMockData()` to seed data before running a test.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type MockDatabase = Record<string, any[]>
