@@ -28,7 +28,8 @@ module.exports = {
   globals: {
     'ts-jest': {
       tsconfig: '<rootDir>/tsconfig.test.json',
-      useESM: true
+      useESM: true,
+      diagnostics: false
     }
   }
 };

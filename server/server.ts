@@ -195,33 +195,39 @@ app.delete('/api/tournaments/:id', async (req, res) => {
 // ─── Tournament Stats ──────────────────────────────────────────────────────
 
 app.get('/api/tournament/stats', async (_req, res) => {
-  const { data: setting, error: sErr } = await supabase
-    .from('settings')
-    .select('currentRound')
-    .single()
-  const { data: teams, error: tErr } = await supabase.from('teams').select('*')
-  const { data: pairings, error: pErr } = await supabase
-    .from('pairings')
-    .select('*')
-  const { data: scores, error: scErr } = await supabase.from('scores').select('*')
+  const [
+    { data: setting,  error: sErr },
+    { data: teams,    error: tErr },
+    { data: pairings, error: pErr },
+    { data: scores,   error: scErr }
+  ] = await Promise.all([
+    supabase.from('settings').select('currentRound').single(),
+    supabase.from('teams').select('*'),
+    supabase.from('pairings').select('*'),
+    supabase.from('scores').select('*')
+  ])
 
   if (sErr || tErr || pErr || scErr) {
     const msg = sErr?.message || tErr?.message || pErr?.message || scErr?.message
     return res.status(500).json({ error: msg })
   }
 
-  const currentRound = setting?.currentRound ?? 1
-  const totalRounds = pairings?.reduce((m, p) => Math.max(m, p.round), 0) ?? 0
+  const allPairings = (pairings as any[]) || []
+  const allScores = (scores as any[]) || []
+  const allTeams = (teams as any[]) || []
 
-  const totalDebates = pairings?.length ?? 0
-  const avgSpeakerScore = scores && scores.length
-    ? scores.reduce((sum, s) => sum + (s.total || 0), 0) / scores.length
+  const currentRound = setting?.currentRound ?? 1
+  const totalRounds = new Set(allPairings.map(p => p.round)).size
+
+  const totalDebates = allPairings.length
+  const avgSpeakerScore = allScores.length
+    ? allScores.reduce((sum, s) => sum + (s.total || 0), 0) / allScores.length
     : 0
-  const activeTeams = teams?.length ?? 0
+  const activeTeams = allTeams.length
 
   const map = new Map<string, { wins: number; speaker: number }>()
-  teams?.forEach(t => map.set(t.name, { wins: 0, speaker: 0 }))
-  pairings?.forEach(p => {
+  allTeams.forEach(t => map.set(t.name, { wins: 0, speaker: 0 }))
+  allPairings.forEach(p => {
     if (p.status === 'completed') {
       const prop = map.get(p.proposition)
       const opp = map.get(p.opposition)
@@ -234,7 +240,7 @@ app.get('/api/tournament/stats', async (_req, res) => {
       }
     }
   })
-  scores?.forEach(s => {
+  allScores.forEach(s => {
     const e = map.get(s.team)
     if (e) e.speaker += s.total || 0
   })
@@ -244,14 +250,16 @@ app.get('/api/tournament/stats', async (_req, res) => {
     wins: stat.wins,
     speakerPoints: stat.speaker,
   }))
-  standings.sort(
-    (a, b) => b.wins - a.wins || b.speakerPoints - a.speakerPoints
-  )
+  standings.sort((a, b) => b.wins - a.wins || b.speakerPoints - a.speakerPoints)
   const currentLeader = standings[0]?.team ?? '-'
 
   res.json({
     currentRound,
     totalRounds,
+    totalDebates,
+    avgSpeakerScore,
+    activeTeams,
+    currentLeader,
     quickStats: {
       totalDebates,
       avgSpeakerScore,
@@ -404,58 +412,6 @@ app.delete('/api/speakers/:id', async (req, res) => {
     .single()
   if (error) return res.status(404).json({ error: error.message })
   res.json(data)
-})
-
-// ─── Tournament Stats ─────────────────────────────────────────────────────
-
-app.get('/api/tournament/stats', async (_req, res) => {
-  const [{ data: pairings, error: pErr }, { data: scores, error: sErr }, { data: teams, error: tErr }, { data: setting, error: setErr }] = await Promise.all([
-    supabase.from('pairings').select('*'),
-    supabase.from('scores').select('*'),
-    supabase.from('teams').select('*'),
-    supabase.from('settings').select('currentRound').single()
-  ])
-
-  if (pErr || sErr || tErr || setErr) {
-    const msg = pErr?.message || sErr?.message || tErr?.message || setErr?.message
-    return res.status(500).json({ error: msg })
-  }
-
-  const allPairings = (pairings as any[]) || []
-  const allScores = (scores as any[]) || []
-  const allTeams = (teams as any[]) || []
-
-  const totalDebates = allPairings.length
-  const totalRounds = new Set(allPairings.map(p => p.round)).size
-  const avgSpeakerScore = allScores.length
-    ? allScores.reduce((sum, s) => sum + (s.total || 0), 0) / allScores.length
-    : 0
-
-  const map = new Map<string, { team: string; wins: number; speakerPoints: number }>()
-  allTeams.forEach(t => map.set(t.name, { team: t.name, wins: 0, speakerPoints: 0 }))
-  allPairings.forEach(p => {
-    if (!map.has(p.proposition)) map.set(p.proposition, { team: p.proposition, wins: 0, speakerPoints: 0 })
-    if (!map.has(p.opposition)) map.set(p.opposition, { team: p.opposition, wins: 0, speakerPoints: 0 })
-    if (p.status === 'completed') {
-      if (p.propWins === true) map.get(p.proposition)!.wins++
-      else if (p.propWins === false) map.get(p.opposition)!.wins++
-    }
-  })
-  allScores.forEach(s => {
-    if (!map.has(s.team)) map.set(s.team, { team: s.team, wins: 0, speakerPoints: 0 })
-    map.get(s.team)!.speakerPoints += s.total || 0
-  })
-
-  const leader = Array.from(map.values()).sort((a, b) => b.wins - a.wins || b.speakerPoints - a.speakerPoints)[0]
-  const currentLeader = leader ? leader.team : null
-
-  res.json({
-    currentRound: setting?.currentRound ?? 1,
-    totalRounds,
-    totalDebates,
-    avgSpeakerScore,
-    currentLeader
-  })
 })
 
 // ─── Pairings CRUD ─────────────────────────────────────────────────────────
