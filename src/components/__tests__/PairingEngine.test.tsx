@@ -2,11 +2,12 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createMockClient } from '../../../test/localStorageSupabase';
 
-// Mock Supabase client to avoid ESM-only package loading
+// Mock Supabase client backed by localStorage
 jest.mock('@/lib/supabase', () => ({
-  supabase: { from: jest.fn() },
   __esModule: true,
+  supabase: createMockClient()
 }));
 
 import PairingEngine from '../PairingEngine';

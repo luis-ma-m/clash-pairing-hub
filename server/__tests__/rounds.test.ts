@@ -5,7 +5,7 @@ import request from 'supertest'
 import type { Express } from 'express'
 import { jest } from '@jest/globals'
 // @ts-expect-error - provided by Jest mock
-import { __setMockData } from '@supabase/supabase-js'
+import { setMockData, createMockClient } from '../../test/localStorageSupabase'
 
 const seed = {
   teams: [
@@ -26,66 +26,10 @@ const seed = {
 let data: Record<string, any> = JSON.parse(JSON.stringify(seed))
 
 // Mock Supabase client so our server code uses in-memory data
-jest.mock('@supabase/supabase-js', () => {
-  const makeThenable = (result: any) => ({
-    then: (res: any, rej: any) => Promise.resolve(result).then(res, rej)
-  })
-
-  return {
-    createClient: () => ({
-      from: (table: string) => ({
-        select: () => {
-          const promise: any = makeThenable({ data: data[table], error: null })
-          promise.eq = (field: string, value: any) => {
-            const filtered = data[table].filter((row: any) => row[field] === value)
-            const eqPromise: any = makeThenable({ data: filtered, error: null })
-            eqPromise.single = () =>
-              Promise.resolve({ data: filtered[0] ?? null, error: null })
-            return eqPromise
-          }
-          promise.single = () =>
-            Promise.resolve({ data: data[table][0] ?? null, error: null })
-          return promise
-        },
-        insert: (vals: any) => {
-          const arr = Array.isArray(vals) ? vals : [vals]
-          const inserted = arr.map(v => ({ id: Date.now(), ...v }))
-          data[table].push(...inserted)
-          const promise: any = makeThenable({ data: inserted, error: null })
-          promise.single = () => Promise.resolve({ data: inserted[0], error: null })
-          return { select: () => promise }
-        },
-        update: (vals: any) => ({
-          eq: (field: string, value: any) => {
-            const apply = () => {
-              const idx = data[table].findIndex((r: any) => r[field] === value)
-              if (idx !== -1) data[table][idx] = { ...data[table][idx], ...vals }
-              return { data: data[table][idx] ?? null, error: null }
-            }
-            const promise: any = makeThenable(apply())
-            promise.select = () => {
-              const p: any = makeThenable(apply())
-              p.single = () => Promise.resolve(apply())
-              return p
-            }
-            return promise
-          }
-        }),
-        delete: () => ({
-          eq: (field: string, value: any) => ({
-            select: () => ({
-              single: () => {
-                const idx = data[table].findIndex((r: any) => r[field] === value)
-                const removed = idx !== -1 ? data[table].splice(idx, 1)[0] : null
-                return Promise.resolve({ data: removed, error: null })
-              }
-            })
-          })
-        })
-      })
-    })
-  }
-})
+jest.mock('@supabase/supabase-js', () => ({
+  __esModule: true,
+  createClient: () => createMockClient()
+}))
 
 let app: Express
 
@@ -98,9 +42,9 @@ beforeAll(async () => {
 })
 
 beforeEach(() => {
-  // Reset our in‐memory dataset and supply it to the mock
+  // Reset our in-memory dataset and supply it to the mock
   data = JSON.parse(JSON.stringify(seed))
-  __setMockData(data)
+  setMockData(data)
 })
 
 describe('Swiss pairing rounds', () => {

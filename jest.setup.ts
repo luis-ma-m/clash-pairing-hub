@@ -16,13 +16,15 @@ import { JSDOM } from 'jsdom';
 
 // Basic DOM polyfill for the test runner
 if (typeof document === 'undefined') {
-  const dom = new JSDOM('<!doctype html><html><body></body></html>');
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost' });
   // @ts-ignore
   global.window = dom.window;
   // @ts-ignore
   global.document = dom.window.document;
   // @ts-ignore
   global.navigator = dom.window.navigator;
+  // @ts-ignore
+  global.localStorage = dom.window.localStorage;
 }
 
 // Ensure TextEncoder/TextDecoder exist in the JSDOM environment
