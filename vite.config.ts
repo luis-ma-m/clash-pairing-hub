@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: '::',
-      port: 8080,
+      // Use Vite's default port to align with documentation
+      port: 5173,
     },
     plugins: [react(), mode === 'development' && componentTagger()].filter(Boolean),
     resolve: {
