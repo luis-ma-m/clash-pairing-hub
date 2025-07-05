@@ -5,35 +5,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Trophy, TrendingUp, Users, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch, expectJson } from '@/lib/api';
+import {
+  getTeamStandings,
+  getSpeakerRankings,
+  getRoundPerformance,
+  getResultDistribution,
+} from '@/lib/localAnalytics';
 
 interface LiveAnalyticsProps {
   tournamentId?: string;
 }
 const LiveAnalytics = ({ tournamentId }: LiveAnalyticsProps) => {
-  const fetchStandings = async () => {
-    const res = await apiFetch('/api/analytics/standings');
-    if (!res.ok) throw new Error('Failed fetching standings');
-    return expectJson(res);
-  };
+  const fetchStandings = async () => getTeamStandings();
 
-  const fetchSpeakers = async () => {
-    const res = await apiFetch('/api/analytics/speakers');
-    if (!res.ok) throw new Error('Failed fetching speakers');
-    return expectJson(res);
-  };
+  const fetchSpeakers = async () => getSpeakerRankings();
 
-  const fetchPerformance = async () => {
-    const res = await apiFetch('/api/analytics/performance');
-    if (!res.ok) throw new Error('Failed fetching performance');
-    return expectJson(res);
-  };
+  const fetchPerformance = async () => getRoundPerformance();
 
-  const fetchResults = async () => {
-    const res = await apiFetch('/api/analytics/results');
-    if (!res.ok) throw new Error('Failed fetching results');
-    return expectJson(res);
-  };
+  const fetchResults = async () => getResultDistribution();
 
   const { data: teamStandings = [] } = useQuery({
     queryKey: ['team-standings'],
