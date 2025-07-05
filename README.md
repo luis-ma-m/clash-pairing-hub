@@ -152,50 +152,19 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
    cp .env.example .env
    ```
 
-   After copying, **edit `.env` and fill in `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-   `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`**. These correspond to lines
-   5–8 in `.env.example`. The server refuses to start if any of them are missing.
+2. `VITE_API_BASE_URL` controls the API server URL and defaults to `http://localhost:3001`.
 
-2. Edit `.env` to configure the backend endpoint and Supabase credentials. `VITE_API_BASE_URL` controls the API server URL and defaults to `http://localhost:3001`.
+### Local Data Storage
 
-   Create a project at [Supabase](https://supabase.com), then copy the **Project URL** and **Anon public key** from the dashboard. Add them to `.env`:
+All data is stored locally in your browser. Clear site data to reset the application.
 
-   ```
-   SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
-   SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
-   VITE_SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
-   ```
+### Development Steps
 
-   The Vite variables are used on the client and should match the server values.
-
-### Supabase Setup
-
-1. Sign in to [Supabase](https://supabase.com) and create a new project.
-2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
-3. Paste those values into the corresponding variables in your `.env` file as shown above.
-4. These variables must be present when starting the API server or building the frontend. The server reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` exclusively – they will **not** be injected into the browser unless the same values are duplicated using the `VITE_` prefix. Missing any of them (see `.env.example` lines 5–8) causes `npm run server` to fail.
-5. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
-6. The login and signup pages require `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to be set in `.env`. If either variable is missing or contains placeholder text, the app displays a “Setup Required” screen (the `AuthFallback` component) instead of the forms.
-7. When deploying to platforms like **Vercel** or **Netlify**, add these environment variables in the platform dashboard and redeploy the application so the build picks them up.
-
-### Creating the Admin User
-
-After configuring `.env`, you can create the default admin account by running:
-
-```bash
-npm run create-admin
-```
-
-This script uses the credentials described in [docs/credentials.md](docs/credentials.md). Provide `SUPABASE_SERVICE_ROLE_KEY` if possible; otherwise it will fall back to the anon key.
-
-3. **Start the development server:**
+1. **Start the development server:**
    ```bash
    npm run dev
    ```
-
-4. **Open your browser:**
-   Navigate to `http://localhost:5173` to see the application.
+2. **Open your browser:** Navigate to `http://localhost:5173`.
 
 ### Development Commands
 
@@ -215,7 +184,6 @@ npm run server
 ```
 
 By default it listens on `http://localhost:3001` unless the `PORT` environment variable is set. The frontend expects the server URL to match `VITE_API_BASE_URL`.
-The API server requires `SUPABASE_URL` and `SUPABASE_ANON_KEY` to connect to your Supabase project. The server will not start if either variable is missing.
 
 ### Running Tests
 
@@ -268,7 +236,7 @@ The platform aims to enable tournament administrators to:
 The **All Tournaments** section of the dashboard lists every event in the
 database. Edit the status field or change settings like `rounds` and
 `elimination` type directly in the list and click **Save**. This issues a
-`PUT /api/tournaments/:id` request so the updates persist in Supabase.
+`PUT /api/tournaments/:id` request so the updates persist in local storage.
 
 ### Phase 3: Real-time Features
 - WebSocket integration

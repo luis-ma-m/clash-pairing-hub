@@ -18,7 +18,6 @@
 - User role management interface (UI only)
 - Tournament dashboard layout
 - Basic API endpoints
-- Backend database integration via Supabase
 - Authentication system with role-based access
 - API layer refactoring with real queries
 
@@ -40,7 +39,6 @@
 **Priority: HIGH - Critical foundation for all features**
 
 #### 1.1 Database Setup & Integration
-- **Connect Supabase integration** (use Lovable's native Supabase button)
 - Design and implement database schema:
   - `tournaments` table (id, name, format, status, settings, created_at)
   - `teams` table (id, tournament_id, name, organization, created_at)
@@ -52,13 +50,11 @@
   - `scores` table (id, debate_id, team_id, speaker_id, points, created_at)
 
 #### 1.2 Authentication System
-- Implement Supabase Auth with email/password
 - Create protected routes and role-based access control
 - Update DashboardNav to handle real authentication
 - Add user profile management
 
 #### 1.3 API Layer Refactoring
-- Replace mock API with real Supabase queries
 - Implement proper error handling and validation
 - Add data fetching with TanStack Query
 - Create reusable API hooks
@@ -237,8 +233,6 @@
 
 ### Architecture Decisions
 - **State Management:** Continue with TanStack Query for server state
-- **Real-time:** Supabase real-time subscriptions
-- **File Storage:** Supabase Storage for CSV uploads/exports
 - **Deployment:** Lovable hosting with custom domain options
 
 ### Performance Optimization
@@ -248,7 +242,6 @@
 - Use React.memo and useMemo for expensive computations
 
 ### Security Requirements
-- Row Level Security (RLS) policies in Supabase
 - Input validation and sanitization
 - Secure file upload handling
 - Rate limiting for API endpoints
@@ -286,18 +279,13 @@
 ## 🚀 Getting Started
 
 ### Immediate Next Steps (Week 1)
-1. **Connect Supabase Integration**
-   - Click the green Supabase button in Lovable
-   - Set up new Supabase project
    - Configure authentication
 
 2. **Database Schema Implementation**
-   - Create initial tables using Supabase dashboard
    - Set up Row Level Security policies
    - Test database connections
 
 3. **Authentication Integration**
-   - Replace mock authentication with Supabase Auth
    - Update DashboardNav component
    - Implement protected routes
 
@@ -313,7 +301,6 @@
 ## 📚 Resources & References
 
 ### Technical Documentation
-- [Supabase Documentation](https://supabase.com/docs)
 - [TanStack Query Guide](https://tanstack.com/query/latest)
 - [Swiss Tournament System](https://en.wikipedia.org/wiki/Swiss-system_tournament)
 - [Debate Tournament Formats](https://worldschoolsdebating.org/formats/)
