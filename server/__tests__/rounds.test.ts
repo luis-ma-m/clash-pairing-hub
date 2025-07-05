@@ -4,7 +4,6 @@
 import request from 'supertest'
 import type { Express } from 'express'
 import { jest } from '@jest/globals'
-// @ts-expect-error - provided by Jest mock
 import { setMockData, getMockData } from '../../test/localStorageSupabase'
 
 const seed = {
