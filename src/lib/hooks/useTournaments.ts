@@ -1,5 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../supabase'
+
+function readLocal<T>(key: string): T[] {
+  if (typeof localStorage === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]') as T[]
+  } catch {
+    return []
+  }
+}
+
+function writeLocal<T>(key: string, value: T[]): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(key, JSON.stringify(value))
+}
 
 export interface Tournament {
   id: string
@@ -14,50 +27,39 @@ export function useTournaments() {
 
   const { data } = useQuery<Tournament[]>({
     queryKey: ['tournaments'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('tournaments').select('*')
-      if (error) throw error
-      return (data as Tournament[]) || []
-    },
+    queryFn: () => readLocal<Tournament>('tournaments'),
   })
 
   const addTournament = useMutation({
     mutationFn: async (t: Omit<Tournament, 'id'>) => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .insert(t)
-        .select()
-        .single()
-      if (error) throw error
-      return data as Tournament
+      const tournaments = readLocal<Tournament>('tournaments')
+      const newTour: Tournament = { id: Date.now().toString(), ...t }
+      writeLocal('tournaments', [...tournaments, newTour])
+      return newTour
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournaments'] }),
   })
 
   const updateTournament = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Tournament> }) => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data as Tournament
+      const tournaments = readLocal<Tournament>('tournaments')
+      const idx = tournaments.findIndex((t) => t.id === id)
+      if (idx === -1) throw new Error('Tournament not found')
+      tournaments[idx] = { ...tournaments[idx], ...updates }
+      writeLocal('tournaments', tournaments)
+      return tournaments[idx]
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournaments'] }),
   })
 
   const deleteTournament = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data as Tournament
+      const tournaments = readLocal<Tournament>('tournaments')
+      const idx = tournaments.findIndex((t) => t.id === id)
+      if (idx === -1) throw new Error('Tournament not found')
+      const [removed] = tournaments.splice(idx, 1)
+      writeLocal('tournaments', tournaments)
+      return removed
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournaments'] }),
   })
