@@ -1,18 +1,40 @@
+// hooks/useAuth.ts
 import { useEffect, useState } from 'react'
+import { getItem, setItem, removeItem } from '@/lib/storage'
+
+interface SessionData {
+  user?: { id: string; email?: string }
+}
 
 export function useAuth() {
-  const [session, setSession] = useState<{ user: { id: string } } | null>(null)
+  const [session, setSession] = useState<SessionData | null>(() =>
+    getItem<SessionData>('session')
+  )
 
   useEffect(() => {
-    const token = localStorage.getItem('userSession')
-    if (token) setSession({ user: { id: token } })
-    const handler = () => {
-      const t = localStorage.getItem('userSession')
-      setSession(t ? { user: { id: t } } : null)
+    const handleStorage = () => {
+      setSession(getItem<SessionData>('session'))
     }
-    window.addEventListener('storage', handler)
-    return () => window.removeEventListener('storage', handler)
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorage)
+      }
+    }
   }, [])
 
-  return session
+  const login = (s: SessionData) => {
+    setItem('session', s)
+    setSession(s)
+  }
+
+  const logout = () => {
+    removeItem('session')
+    setSession(null)
+  }
+
+  return { session, login, logout }
 }

@@ -3,14 +3,8 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock Supabase client to avoid ESM-only package loading
-jest.mock('@/lib/supabase', () => ({
-  supabase: { from: jest.fn() },
-  __esModule: true,
-}));
 
 import PairingEngine from '../PairingEngine';
-import { supabase } from '@/lib/supabase';
 
 const createWrapper = () => {
   const queryClient = new QueryClient({

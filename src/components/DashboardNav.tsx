@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { logoutDemo } from '@/lib/demoAuth';
+import { getItem, removeItem } from '@/lib/storage';
 
 interface DashboardNavProps {
   activeTournament: {
@@ -27,11 +26,19 @@ interface DashboardNavProps {
 const DashboardNav = ({ activeTournament }: DashboardNavProps) => {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user.email ?? null)
-    })
-    return () => subscription.unsubscribe()
+    const update = () => {
+      const sess = getItem<{ user?: { email?: string } }>('session')
+      setUserEmail(sess?.user?.email ?? null)
+    }
+    update()
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', update)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', update)
+      }
+    }
   }, [])
   return (
     <nav className="bg-white border-b border-slate-200 px-4 py-3">
@@ -83,12 +90,8 @@ const DashboardNav = ({ activeTournament }: DashboardNavProps) => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => {
-                if (isSupabaseConfigured()) {
-                  supabase.auth.signOut()
-                } else {
-                  logoutDemo()
-                  window.location.href = '/signin'
-                }
+                removeItem('session')
+                window.location.href = '/signin'
               }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out

@@ -1,39 +1,53 @@
+// components/ProtectedRoute.tsx
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { getItem } from '@/lib/storage';
 
-import { Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { isSupabaseConfigured } from '@/lib/supabase'
-import DemoMode from './DemoMode'
-import { isDemoLoggedIn } from '@/lib/demoAuth'
+interface SessionData {
+  user?: {
+    id: string;
+    email?: string;
+  };
+}
 
-export default function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<string | null>(null)
-  const [hasConfig, setHasConfig] = useState(true)
+export default function ProtectedRoute({
+  children,
+}: {
+  children: JSX.Element;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<SessionData | null>(null);
 
   useEffect(() => {
-    // Verify Supabase configuration once on mount. If invalid, show demo mode
-    // rather than attempting auth calls that will fail.
-    if (!isSupabaseConfigured()) {
-      setHasConfig(false)
-      setLoading(false)
-      return
+    const update = () => {
+      const s = getItem<SessionData>('session');
+      setSession(s);
+      setLoading(false);
+    };
+
+    update();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', update);
     }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', update);
+      }
+    };
+  }, []);
 
-    setSession(localStorage.getItem('userSession'))
-    const handler = () => {
-      setSession(localStorage.getItem('userSession'))
-    }
-    window.addEventListener('storage', handler)
-    setLoading(false)
-
-    return () => { window.removeEventListener('storage', handler) }
-  }, [])
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!hasConfig) {
-    if (isDemoLoggedIn()) return children
-    return <DemoMode />
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
-  if (!session) return <Navigate to="/signin" replace />
-  return children
+
+  // If there's no logged-in user, redirect to sign-in
+  if (!session?.user?.id) {
+    return <Navigate to="/signin" replace />;
+  }
+
+  return children;
 }
