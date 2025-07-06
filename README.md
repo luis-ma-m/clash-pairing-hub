@@ -228,6 +228,10 @@ npm test --silent
 
 This command runs all unit tests including Swiss pairing and bracket generation checks.
 
+For tests that need Supabase, import `test/localStorageSupabase.ts` to use a
+localStorage-backed mock. Call `setMockData()` before each test to seed the
+tables your test expects.
+
 ## 🎯 Success Criteria
 
 The platform aims to enable tournament administrators to:
