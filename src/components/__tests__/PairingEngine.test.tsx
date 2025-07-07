@@ -27,6 +27,7 @@ describe('PairingEngine', () => {
     setItem('rounds', [{ id: 'r1', tournament_id: 't1', round_number: 1, status: 'scheduled' }]);
     setItem('pairings', []);
 
+    main
     await act(async () => {
       render(<PairingEngine tournamentId="t1" />, { wrapper: createWrapper() });
     });

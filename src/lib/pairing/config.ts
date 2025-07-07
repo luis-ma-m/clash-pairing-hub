@@ -1,6 +1,9 @@
 // src/lib/settings/loadConstraintSettings.ts
-import { supabase } from '../supabase'
 import defaultConfig from './constraints-config.json'
+import {
+  getConstraintSettings,
+  setConstraintSettings,
+} from '../localData'
 
 export interface ConstraintSettings {
   NoRepeatMatch: boolean
@@ -16,37 +19,20 @@ export interface ConstraintRow {
 }
 
 /**
- * Loads constraint settings from Supabase, falling back to defaults on error.
+ * Load constraint settings from localStorage with defaults.
  */
-export async function loadConstraintSettings(): Promise<ConstraintSettings> {
+export function loadConstraintSettings(): ConstraintSettings {
   try {
-    // Fetch typed rows from the database
-    const { data, error } = await supabase
-      .from('constraint_settings')
-      .select('name, enabled')
-
-    if (error) {
-      throw error
-    }
-    if (!data) {
-      throw new Error('No data returned')
-    }
-
-    // Start with the default JSON configuration
-    const cfg: ConstraintSettings = { ...(defaultConfig as ConstraintSettings) }
-
-    const rows = data as ConstraintRow[]
-
-    // Merge any overrides from the database
-    for (const row of rows) {
-      if (row.name in cfg) {
-        cfg[row.name] = row.enabled
-      }
-    }
-
-    return cfg
+    const stored = getConstraintSettings<Partial<ConstraintSettings>>()
+    return { ...(defaultConfig as ConstraintSettings), ...(stored ?? {}) }
   } catch {
-    // On any failure, return the defaults
     return defaultConfig as ConstraintSettings
   }
+}
+
+/**
+ * Persist constraint settings to localStorage.
+ */
+export function saveConstraintSettings(settings: ConstraintSettings): void {
+  setConstraintSettings(settings)
 }

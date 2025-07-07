@@ -15,7 +15,7 @@ export async function generateSwissPairings(
   rooms: string[] = [],
   judges: string[] = [],
 ): Promise<Pairing[]> {
-  const settings = await loadConstraintSettings();
+  const settings = loadConstraintSettings();
   const active = constraints.filter(c => settings[c.type as keyof typeof settings]);
 
   const sorted = [...teams].sort(
