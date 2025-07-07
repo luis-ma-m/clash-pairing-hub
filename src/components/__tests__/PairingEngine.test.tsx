@@ -24,11 +24,6 @@ describe('PairingEngine', () => {
   });
 
   it('renders without crashing', async () => {
-    const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-    mockSupabase.from = jest.fn().mockReturnValue({
-      select: jest.fn().mockResolvedValue({ data: [], error: null }),
-    });
-
     await act(async () => {
       render(<PairingEngine tournamentId="t1" />, { wrapper: createWrapper() });
     });
