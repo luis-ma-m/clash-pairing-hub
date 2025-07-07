@@ -1,9 +1,9 @@
 
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-
+import { jest } from '@jest/globals';
+import { setItem } from '@/lib/storage';
 import PairingEngine from '../PairingEngine';
 
 const createWrapper = () => {
@@ -23,7 +23,11 @@ describe('PairingEngine', () => {
     jest.clearAllMocks();
   });
 
-  it('renders without crashing', async () => {
+  it('renders with local storage data', async () => {
+    setItem('rounds', [{ id: 'r1', tournament_id: 't1', round_number: 1, status: 'scheduled' }]);
+    setItem('pairings', []);
+
+    main
     await act(async () => {
       render(<PairingEngine tournamentId="t1" />, { wrapper: createWrapper() });
     });

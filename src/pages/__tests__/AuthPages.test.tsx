@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { jest } from '@jest/globals'
 
 jest.mock('@/lib/storage', () => ({
   setItem: jest.fn(),
@@ -7,56 +8,34 @@ jest.mock('@/lib/storage', () => ({
   __esModule: true,
 }))
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({
-    auth: {
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-      getSession: jest.fn(() => Promise.resolve({ data: { session: null } })),
-    },
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-  }),
-  __esModule: true,
-}))
 
 import SignIn from '../SignIn'
 import SignUp from '../SignUp'
+import * as storage from '@/lib/storage'
 
-describe.skip('Auth pages configuration checks', () => {
-  const ORIGINAL_ENV = process.env
-
+describe('Auth pages local storage', () => {
   beforeEach(() => {
-    jest.resetModules()
-    process.env = { ...ORIGINAL_ENV }
-  })
+    jest.clearAllMocks();
+  });
 
-  afterAll(() => {
-    process.env = ORIGINAL_ENV
-  })
+  it('stores session on sign in', () => {
+    render(<SignIn />);
 
-  it('shows AuthFallback on SignIn when env vars missing', () => {
-    delete process.env.VITE_SUPABASE_URL
-    delete process.env.VITE_SUPABASE_ANON_KEY
-    render(<SignIn />)
-    expect(screen.getByText(/Setup Required/i)).toBeInTheDocument()
-  })
+    fireEvent.change(screen.getByPlaceholderText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/Password/i), { target: { value: 'pass' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-  it('shows AuthFallback on SignUp when env vars missing', () => {
-    delete process.env.VITE_SUPABASE_URL
-    delete process.env.VITE_SUPABASE_ANON_KEY
-    render(<SignUp />)
-    expect(screen.getByText(/Setup Required/i)).toBeInTheDocument()
-  })
+    expect(storage.setItem).toHaveBeenCalledWith('session', { user: { id: 'test@example.com', email: 'test@example.com' } });
+  });
 
-  it('renders forms when env vars are present', () => {
-    process.env.VITE_SUPABASE_URL = 'https://example.supabase.co'
-    process.env.VITE_SUPABASE_ANON_KEY = 'key'
-    render(<SignIn />)
-    expect(screen.getByText(/Sign In/i)).toBeInTheDocument()
-  })
-})
+  it('stores session on sign up', () => {
+    render(<SignUp />);
+
+    fireEvent.change(screen.getByPlaceholderText(/Email/i), { target: { value: 'new@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/Name/i), { target: { value: 'New User' } });
+    fireEvent.change(screen.getByPlaceholderText(/Password/i), { target: { value: 'pass' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    expect(storage.setItem).toHaveBeenCalledWith('session', { user: { id: 'new@example.com', email: 'new@example.com', name: 'New User' } });
+  });
+});
