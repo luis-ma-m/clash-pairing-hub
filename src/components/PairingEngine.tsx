@@ -1,112 +1,37 @@
-// src/components/PairingEngine.tsx
-import React, { useEffect, useState } from 'react'
-import { usePairings, type Pairing } from '@/lib/hooks/usePairings'
-import { useRounds } from '@/lib/hooks/useRounds'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 
-const PairingEngine: React.FC = () => {
-  const [pairingAlgorithm, setPairingAlgorithm] =
-    useState<'swiss' | 'power' | 'random'>('swiss')
-  const [roomsInput, setRoomsInput] = useState('')
-  const [judgesInput, setJudgesInput] = useState('')
-  const { pairings, currentRound, generatePairings } = usePairings()
-  const { rounds } = useRounds()
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Shuffle } from "lucide-react";
 
-  const handleGenerate = async () => {
-    const rooms = roomsInput
-      .split(',')
-      .map(r => r.trim())
-      .filter(Boolean)
-    const judges = judgesInput
-      .split(',')
-      .map(j => j.trim())
-      .filter(Boolean)
-
-    await generatePairings({
-      round: currentRound + 1,
-      algorithm: pairingAlgorithm,
-      rooms,
-      judges,
-    })
-  }
-
-  return (
-    <Card className="space-y-6">
-      <CardHeader>
-        <CardTitle>Pairing Engine</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <span className="font-semibold">
-            Round {currentRound + 1} of {rounds.length}
-          </span>
-          <select
-            value={pairingAlgorithm}
-            onChange={(e) =>
-              setPairingAlgorithm(e.target.value as 'swiss' | 'power' | 'random')
-            }
-            className="border rounded px-2 py-1 text-sm"
-          >
-            <option value="swiss">Swiss</option>
-            <option value="power">Power</option>
-            <option value="random">Random</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            placeholder="Rooms (comma separated)"
-            value={roomsInput}
-            onChange={(e) => setRoomsInput(e.target.value)}
-          />
-          <Input
-            placeholder="Judges (comma separated)"
-            value={judgesInput}
-            onChange={(e) => setJudgesInput(e.target.value)}
-          />
-        </div>
-
-        <Button onClick={handleGenerate} className="w-full">
-          Generate Pairings
-        </Button>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Room</TableHead>
-              <TableHead>Proposition</TableHead>
-              <TableHead>Opposition</TableHead>
-              <TableHead>Judge</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pairings
-              .filter((p) => p.round === currentRound + 1)
-              .map((p: Pairing) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-mono">{p.room}</TableCell>
-                  <TableCell>{p.proposition}</TableCell>
-                  <TableCell>{p.opposition}</TableCell>
-                  <TableCell>{p.judge}</TableCell>
-                  <TableCell>{p.status}</TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
+interface PairingEngineProps {
+  tournamentId: string;
 }
 
-export default PairingEngine
+export default function PairingEngine({ tournamentId }: PairingEngineProps) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Pairing Engine</h2>
+          <p className="text-gray-600">Generate and manage debate pairings</p>
+        </div>
+        <Button>
+          <Shuffle className="h-4 w-4 mr-2" />
+          Generate Pairings
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Round Pairings</CardTitle>
+          <CardDescription>
+            Tournament ID: {tournamentId}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-500">No pairings generated yet.</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
