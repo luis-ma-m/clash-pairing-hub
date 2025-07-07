@@ -146,48 +146,27 @@ DebateMinistrator is a modern, web-based platform designed to streamline the end
 
 ### Environment Variables
 
-1. Copy the example environment file:
+1. Create an optional `.env` file if you need to override defaults:
 
    ```bash
-   cp .env.example .env
+   touch .env
    ```
 
-  After copying, **edit `.env` and fill in `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-  `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`**. These correspond to lines
-  5–8 in `.env.example` and are required for the Supabase client to work.
+  No external credentials are required because the app stores data in the
+  browser using **localStorage**.
 
-2. Edit `.env` to configure the Supabase credentials.
+### Local Storage Persistence
 
-   Create a project at [Supabase](https://supabase.com), then copy the **Project URL** and **Anon public key** from the dashboard. Add them to `.env`:
+All tournament data, user accounts and settings are persisted in the browser's
+`localStorage`. Clearing your browser storage resets the application to a clean
+state. During development this removes the need for any external database. The
+hooks under `src/lib/hooks` read and write local data automatically.
 
-   ```
-   SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
-   SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
-   VITE_SUPABASE_URL=https://avzduledlmahtvmvgnxy.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2emR1bGVkbG1haHR2bXZnbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2Njk5ODYsImV4cCI6MjA2NTI0NTk4Nn0.Ni6j-h6oNcDrC8ppCjBZmzciAZhQx8An_GN-o62Jatk
-   ```
+### Admin Account
 
-   The Vite variables are used on the client and should match the server values.
-
-### Supabase Setup
-
-1. Sign in to [Supabase](https://supabase.com) and create a new project.
-2. In your project's **Settings → API** section copy the **Project URL** and **Anon public key**.
-3. Paste those values into the corresponding variables in your `.env` file as shown above.
-4. These variables must be present when building the frontend. They will **not** be injected into the browser unless the same values are duplicated using the `VITE_` prefix.
-5. See [docs/credentials.md](docs/credentials.md) for the default admin login and a list of required environment variables. These must be configured before running `npm run create-admin`.
-6. The login and signup pages require `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to be set in `.env`. If either variable is missing or contains placeholder text, the app displays a “Setup Required” screen (the `AuthFallback` component) instead of the forms.
-7. When deploying to platforms like **Vercel** or **Netlify**, add these environment variables in the platform dashboard and redeploy the application so the build picks them up.
-
-### Creating the Admin User
-
-After configuring `.env`, you can create the default admin account by running:
-
-```bash
-npm run create-admin
-```
-
-This script uses the credentials described in [docs/credentials.md](docs/credentials.md). Provide `SUPABASE_SERVICE_ROLE_KEY` if possible; otherwise it will fall back to the anon key.
+The first time the app loads it creates a default admin account using the
+credentials in [docs/credentials.md](docs/credentials.md). No additional setup is
+required. Clearing browser storage removes this account.
 
 3. **Start the development server:**
    ```bash
@@ -226,11 +205,9 @@ Then execute all unit tests:
 npm test --silent
 ```
 
-This command runs all unit tests including Swiss pairing and bracket generation checks.
-
-For tests that need Supabase, import `test/localStorageSupabase.ts` to use a
-localStorage-backed mock. Call `setMockData()` before each test to seed the
-tables your test expects.
+This command runs all unit tests including Swiss pairing and bracket generation
+checks. Tests that rely on browser storage can use Jest's built-in
+`localStorage` mocks.
 
 ## 🎯 Success Criteria
 
@@ -260,7 +237,7 @@ The platform aims to enable tournament administrators to:
 The **All Tournaments** section of the dashboard lists every event in the
 database. Edit the status field or change settings like `rounds` and
 `elimination` type directly in the list and click **Save**. This issues a
-`PUT /api/tournaments/:id` request so the updates persist in Supabase.
+`PUT /api/tournaments/:id` request so the updates persist in local storage.
 
 ### Phase 3: Real-time Features
 - WebSocket integration
