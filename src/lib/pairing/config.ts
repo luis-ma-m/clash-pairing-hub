@@ -1,5 +1,9 @@
 // src/lib/settings/loadConstraintSettings.ts
 import defaultConfig from './constraints-config.json'
+import {
+  getConstraintSettings,
+  setConstraintSettings,
+} from '../localData'
 
 export interface ConstraintSettings {
   NoRepeatMatch: boolean
@@ -15,8 +19,20 @@ export interface ConstraintRow {
 }
 
 /**
- * Loads constraint settings from the local JSON configuration.
+ * Load constraint settings from localStorage with defaults.
  */
-export async function loadConstraintSettings(): Promise<ConstraintSettings> {
-  return defaultConfig as ConstraintSettings
+export function loadConstraintSettings(): ConstraintSettings {
+  try {
+    const stored = getConstraintSettings<Partial<ConstraintSettings>>()
+    return { ...(defaultConfig as ConstraintSettings), ...(stored ?? {}) }
+  } catch {
+    return defaultConfig as ConstraintSettings
+  }
+}
+
+/**
+ * Persist constraint settings to localStorage.
+ */
+export function saveConstraintSettings(settings: ConstraintSettings): void {
+  setConstraintSettings(settings)
 }
