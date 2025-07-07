@@ -18,7 +18,7 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
   ```
 
 - Tests are located under `src/**/__tests__`.
-- If tests complain about missing environment variables, copy `.env.example` to `.env` and provide values for `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and related keys.  The backend refuses to start without them.
+- If tests complain about missing environment variables, create an empty `.env` file. Local storage is used for persistence during development.
 
 ## Linting
 - Run `npm run lint` before committing.  Lint errors will cause CI failures.
@@ -28,7 +28,7 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
 
 ## Typical Issues
 - If the dev server fails after dependency updates, remove `node_modules` and run `npm install` again.
-- Ensure the environment variables in `.env` match those expected by the backend (`VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, etc.).
+- Ensure any custom environment variables in `.env` match those expected by the frontend (`VITE_API_BASE_URL`, etc.).
 
 ## Pull Requests
 - Make small, clear commits with descriptive messages.
@@ -37,7 +37,6 @@ This repository hosts **DebateMinistrator**, a full-stack application for debate
 ## Repository Layout
 - `src/` – React components and utilities.
 - `server/` – **removed**. Pairing logic now lives client side.
-- `supabase/` – Supabase configuration and SQL migrations.
 - `ROADMAP.md` – Long term development plan.
 
 Consult `README.md` for a complete overview of project goals and setup instructions.
