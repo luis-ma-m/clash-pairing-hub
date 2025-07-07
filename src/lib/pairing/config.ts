@@ -30,7 +30,9 @@ export function loadConstraintSettings(): ConstraintSettings {
   }
 }
 
-/** Persist constraint settings to localStorage. */
+/**
+ * Persist constraint settings to localStorage.
+ */
 export function saveConstraintSettings(settings: ConstraintSettings): void {
   setConstraintSettings(settings)
 }
