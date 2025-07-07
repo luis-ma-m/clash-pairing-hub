@@ -24,3 +24,8 @@ export const setScores = <T>(val: T) => writeLocal('scores', val);
 
 export const getUsers = <T = unknown[]>(): T => readLocal<T>('users', [] as unknown as T);
 export const setUsers = <T>(val: T) => writeLocal('users', val);
+
+export const getConstraintSettings = <T = unknown>(): T =>
+  readLocal<T>('constraint_settings', {} as unknown as T);
+export const setConstraintSettings = <T>(val: T) =>
+  writeLocal('constraint_settings', val);
