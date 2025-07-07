@@ -1,12 +1,9 @@
+
 // src/lib/api.ts
 
 // Determine the API base URL from environment variables
-// When bundled for the browser, the build process should replace this value
-// with the appropriate string literal. During tests or in Node, it falls back
-// to `process.env`. Use Vite-injected env at build time or Node env in tests.
-export const apiBaseUrl =
-  (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) ||
-  'http://localhost:3001';
+// Use Vite's import.meta.env for environment variables in the browser
+export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 // Helper to prefix relative paths with the base URL
 export function apiFetch(input: string, init?: RequestInit) {

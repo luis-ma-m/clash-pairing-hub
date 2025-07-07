@@ -6,6 +6,8 @@ export interface Tournament {
   name: string;
   format: string;
   status: string;
+  rounds: number;
+  teams: number;
   settings: Record<string, unknown>;
 }
 
@@ -16,6 +18,8 @@ export function useTournaments() {
       name: 'Demo Tournament',
       format: 'British Parliamentary',
       status: 'In Progress',
+      rounds: 3,
+      teams: 0,
       settings: { rounds: 3 }
     }
   ]);

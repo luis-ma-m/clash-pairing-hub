@@ -12,7 +12,7 @@ import ScoringInterface from '@/components/ScoringInterface';
 import LiveAnalytics from '@/components/LiveAnalytics';
 import UserRoleManager from '@/components/UserRoleManager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTournaments } from '@/lib/hooks/useTournaments';
+import { useTournaments, Tournament } from '@/lib/hooks/useTournaments';
 import { Trophy, Users, Shuffle, Target, BarChart3, Settings } from 'lucide-react';
 
 const Index = () => {
@@ -26,22 +26,15 @@ const Index = () => {
     }
   }, [tournaments, selectedId]);
 
-  const activeTournamentData = tournaments.find(t => t.id === selectedId);
-  const activeTournament = activeTournamentData
-    ? {
-        ...activeTournamentData,
-        rounds: (activeTournamentData.settings as Record<string, unknown>)?.rounds ?? 0,
-        teams: 0,
-      }
-    : {
-        id: '',
-        name: 'No Tournament Selected',
-        format: '',
-        rounds: 0,
-        teams: 0,
-        status: '',
-        settings: {},
-      };
+  const activeTournament = tournaments.find(t => t.id === selectedId) || {
+    id: '',
+    name: 'No Tournament Selected',
+    format: '',
+    rounds: 0,
+    teams: 0,
+    status: '',
+    settings: {},
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
